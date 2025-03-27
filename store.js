@@ -2,12 +2,9 @@
 //  This will include the following methods:
 // set, get, remove, has
 
-import StringStore from "./data-type/stringStore";
-
 class InMemoryStore {
   constructor() {
     this.store = new Map();
-    this.string = new StringStore(this.store);
   }
 
   // CORE FUNCTIONS
@@ -27,7 +24,88 @@ class InMemoryStore {
     return this.store.has(key);
   }
 
+  // STRING OPERATIONS
+  append(key, value) {
+    if (!this.store.has(key)) {
+      this.store.set(key, String(value));
+    } else {
+      this.store.set(key, this.store.get(key) + String(value));
+    }
 
+    return this.store.get(key).length;
+  }
+
+  strlen(key) {
+    return this.store.has(key) ? this.store.get(key).length : 0;
+  }
+
+  // NUMBER OPERATIONS
+  incr(key) {
+    if (!this.store.has(key)) {
+      this.store.set(key, "1");
+    } else {
+      let value = Number(this.store.get(key));
+      if (isNaN(value)) throw new Error("Value is not an integer");
+      this.store.set(key, String(value + 1));
+    }
+    return this.store.get(key);
+  }
+
+  decr(key) {
+    if (!this.store.has(key)) {
+      this.store.set(key, "-1");
+    } else {
+      let value = Number(this.store.get(key));
+      if (isNaN(value))
+        throw new Error("ERR value is not a number or out of range");
+      this.store.set(key, String(value - 1));
+    }
+    return this.store.get(key);
+  }
+
+  incrBy(key, valToIncrement) {
+    if (!this.store.has(key)) {
+      this.store.set(key, String(value));
+    } else {
+      let value = Number(this.store.get(key));
+      if (isNaN(value)) throw new Error("Value is not an integer");
+      this.store.set(key, String(value + valToIncrement));
+    }
+
+    return this.store.get(key);
+  }
+
+  decBy(key, valToDecrement) {
+    if (!this.store.has(key)) {
+      this.store.set(key, String(value));
+    } else {
+      let value = Number(this.store.get(key));
+      if (isNaN(value)) throw new Error("Value is not an integer");
+      this.store.set(key, String(value - valToDecrement));
+    }
+
+    return this.store.get(key);
+  }
+
+// SUBSTRING OPERATIONS
+
+  getRange(key, start, end) {
+    if (!this.store.has(key)) return null;
+    let value = this.store.get(key);
+    return value.substring(start, end + 1);
+  }
+
+  setRange(key, offset, substring) {
+    if(!this.store.has(key)) {
+        this.store.set(key, " ".repeat(offset) + substring);
+    } else {
+        let value = this.store.get(key);
+        let newVal = value.substring(0, offset) + substring + value.substring(offset + substring.length);
+        this.store.set(key, newVal);
+    }
+
+    return this.store.get(key).length;
+  }
 }
 
 export default InMemoryStore;
