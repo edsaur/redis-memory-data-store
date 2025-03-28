@@ -146,3 +146,9 @@
 {"command":"db.list.rpush","data":{"key":"users","val":["David","Eve"]}}
 {"command":"db.list.lpop","data":{"key":"users","val":"Alice"}}
 {"command":"db.list.rpop","data":{"key":"users","val":"Eve"}}
+{"command":"db.json.set","data":{"key":"user:1","path":"$","value":{"name":"John","age":30}}}
+{"command":"db.json.set","data":{"key":"user:1","path":"skills[0]","value":"JavaScript"}}
+{"command":"db.json.set","data":{"key":"user:2","path":"$","value":{"name":"John Doe","age":30,"skills":["HTML","CSS","JavaScript"]}}}
+{"command":"db.json.set","data":{"key":"user:2","path":"skills[2]","value":"Node.js"}}
+{"command":"db.json.set","data":{"key":"user:2","path":"hobbies[0]","value":"Gaming"}}
+{"command":"db.json.arrAppend","data":{"key":"user:2","path":"skills","value":"Python"}}

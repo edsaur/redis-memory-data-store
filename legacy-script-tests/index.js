@@ -1,4 +1,4 @@
-import db from "./db.js";
+import db from "../db.js";
 
 // TEST CASES FOR DB
 // Test: String Store
