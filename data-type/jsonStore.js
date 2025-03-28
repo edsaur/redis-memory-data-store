@@ -21,7 +21,7 @@ class JsonStore {
   // Retrieves a JSON object from the store and returns it;
 
   get(key, path = "$") {
-    if (!this.store.has(key)) throw new Error("Key does not exist"); // throws Error if key does not exist
+    if (!this.store.has(key)) return null; // throws Error if key does not exist
     let jsonData = JSON.parse(this.store.get(key)); // Get the JSON object
     if (path === "$") return jsonData; // Return the entire object if path is $
 
@@ -29,10 +29,11 @@ class JsonStore {
   }
 
   del(key, path = "$") {
-    if (!this.store.has(key)) throw new Error("Key does not exist"); // throws Error if key does not exist
+    if (!this.store.has(key)) return false; // Return false instead of throwing an error
 
     if (path === "$") {
       this.store.delete(key); // Delete the entire object
+      this.appendToAOF("db.json.del", { key });
       return true;
     }
 
@@ -40,6 +41,7 @@ class JsonStore {
 
     if (this.deletePath(jsonData, path)) {
       this.store.set(key, JSON.stringify(jsonData)); // Only delete the value at the specified path
+      this.appendToAOF("db.json.del", { key });
       return true;
     }
 
@@ -54,6 +56,7 @@ class JsonStore {
     if (!Array.isArray(arr)) throw new Error("Path is not an array");
     arr.push(value);
     this.store.set(key, JSON.stringify(jsonData));
+    this.appendToAOF("db.json.arrAppend", { key, path, value });
 
     return arr.length;
   }
@@ -67,13 +70,13 @@ class JsonStore {
 
     for (let i = 0; i < keys.length - 1; i++) {
       let key = keys[i];
-    //   console.log("here " + key);
+      //   console.log("here " + key);
 
       let nextKey = keys[i + 1];
-    //   console.log("here " + nextKey);
+      //   console.log("here " + nextKey);
 
       let isArrayIndex = !isNaN(parseInt(nextKey)); // ✅ Check if next key is a number (array index)
-    //   console.log("here " + isArrayIndex);
+      //   console.log("here " + isArrayIndex);
 
       // Convert key to number if it's an array index
       if (!isNaN(parseInt(key))) {
@@ -87,7 +90,7 @@ class JsonStore {
       }
 
       current = current[key]; // Move deeper into the object
-    //   console.log("Current: " + current);
+      //   console.log("Current: " + current);
     }
 
     let finalKey = keys[keys.length - 1];
@@ -120,7 +123,8 @@ class JsonStore {
     let current = obj;
 
     for (let i = 0; i < keys.length - 1; i++) {
-      if (!current || typeof current !== "object") throw new Error ("Path is not an object"); // Ensure current is an object
+      if (!current || typeof current !== "object")
+        throw new Error("Path is not an object"); // Ensure current is an object
       if (!(keys[i] in current)) throw new Error("Key does not exist"); // Key does not exist
       current = current[keys[i]]; // Traverse deeper
     }
