@@ -38,13 +38,14 @@ class RedisLikeDB {
       const snapshotData = JSON.parse(data);
 
       for (const [key, value] of Object.entries(snapshotData)) {
-        // Only parse if the value is a string AND it looks like a JSON object (starts and ends with curly braces)
-        const parsedValue =
-          typeof value === "string" &&
-          value.startsWith("{") &&
-          value.endsWith("}")
-            ? JSON.parse(value)
-            : value;
+        let parsedValue = value;
+        if (Array.isArray(value)) {
+          // Reconstruct Sets from arrays
+          parsedValue = new Set(value);
+        } else if (typeof value === 'object' && value !== null) {
+          // Handle nested objects (for JSON data)
+          parsedValue = value;
+        }
         this.store.set(key, parsedValue);
       }
       console.log("Snapshot loaded");
@@ -52,6 +53,7 @@ class RedisLikeDB {
       console.log("No snapshot found");
     }
   }
+
 
   // Replay AOF file
   replayAOF() {
