@@ -4,6 +4,7 @@ import JsonStore from "./data-type/jsonStore.js";
 import InMemoryStore from "./store.js";
 import ListStore from "./data-type/listsStore.js";
 import SetStore from "./data-type/setStore.js";
+import HashStore from "./data-type/hashStore.js";
 
 class RedisLikeDB {
   constructor(aofFile = "data.aof", snapshotFile = "data.snapshot.json") {
@@ -16,6 +17,7 @@ class RedisLikeDB {
     this.json = new JsonStore(this.store, this.appendToAOF.bind(this));
     this.list = new ListStore(this.store, this.appendToAOF.bind(this));
     this.set = new SetStore(this.store, this.appendToAOF.bind(this));
+    this.hash = new HashStore(this.store, this.appendToAOF.bind(this));
 
     //  Load snapshot file
     this.loadSnapshot();
@@ -36,12 +38,14 @@ class RedisLikeDB {
       const snapshotData = JSON.parse(data);
 
       for (const [key, value] of Object.entries(snapshotData)) {
-        // Convert arrays to Sets where appropriate
-        if (Array.isArray(value)) {
-          this.store.set(key, new Set(value));
-        } else {
-          this.store.set(key, value);
-        }
+        // Only parse if the value is a string AND it looks like a JSON object (starts and ends with curly braces)
+        const parsedValue =
+          typeof value === "string" &&
+          value.startsWith("{") &&
+          value.endsWith("}")
+            ? JSON.parse(value)
+            : value;
+        this.store.set(key, parsedValue);
       }
       console.log("Snapshot loaded");
     } else {
