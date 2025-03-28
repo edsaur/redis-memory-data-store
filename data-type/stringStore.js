@@ -1,12 +1,14 @@
 // Store all string methods here
 
 class StringStore {
-  constructor(store) {
+  constructor(store, appendToAOF) {
     this.store = store;
+    this.appendToAOF = appendToAOF;
   }
 
   set(key, value) {
     this.store.set(key, value);
+    this.appendToAOF(`db.string.set`, { key, value });
   }
 
   get(key) {
@@ -19,6 +21,7 @@ class StringStore {
       this.store.set(key, String(value));
     } else {
       this.store.set(key, this.store.get(key) + String(value));
+      this.appendToAOF(`db.string.append`, { key, value });
     }
 
     return this.store.get(key).length;

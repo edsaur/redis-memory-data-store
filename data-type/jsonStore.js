@@ -1,6 +1,7 @@
 class JsonStore {
-  constructor(store) {
+  constructor(store, appendToAOF) {
     this.store = store;
+    this.appendToAOF = appendToAOF;
   }
 
   // Generates a JSON object and stores it in the store;
@@ -14,6 +15,7 @@ class JsonStore {
     }
 
     this.store.set(key, JSON.stringify(jsonData)); // Store the JSON object;
+    this.appendToAOF(`db.json.set`, { key, path, value });
   }
 
   // Retrieves a JSON object from the store and returns it;
@@ -59,24 +61,24 @@ class JsonStore {
   // HELPER METHODS for JsonStore
   setPath(obj, path, value) {
     const keys = path.replace(/\[(\d+)\]/g, ".$1").split("."); // ✅ Convert array indices properly
-    console.log("keys: " + keys);
+    // console.log("keys: " + keys);
     let current = obj;
-    console.log("current: " + current);
+    // console.log("current: " + current);
 
     for (let i = 0; i < keys.length - 1; i++) {
       let key = keys[i];
-      console.log("here " + key);
+    //   console.log("here " + key);
 
       let nextKey = keys[i + 1];
-      console.log("here " + nextKey);
+    //   console.log("here " + nextKey);
 
       let isArrayIndex = !isNaN(parseInt(nextKey)); // ✅ Check if next key is a number (array index)
-      console.log("here " + isArrayIndex);
+    //   console.log("here " + isArrayIndex);
 
       // Convert key to number if it's an array index
       if (!isNaN(parseInt(key))) {
         key = parseInt(key);
-        console.log("Key: " + key);
+        // console.log("Key: " + key);
       }
 
       // Ensure correct data structure exists
@@ -85,7 +87,7 @@ class JsonStore {
       }
 
       current = current[key]; // Move deeper into the object
-      console.log("Current: " + current);
+    //   console.log("Current: " + current);
     }
 
     let finalKey = keys[keys.length - 1];
