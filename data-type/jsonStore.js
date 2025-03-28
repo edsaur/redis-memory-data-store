@@ -7,14 +7,20 @@ class JsonStore {
   // Generates a JSON object and stores it in the store;
   // $ is the root of the object
   set(key, path, value) {
-    let jsonData = this.store.has(key) ? JSON.parse(this.store.get(key)) : {}; // Create object if it doesn't exist
+    let storedValue = this.store.get(key);
+
+    let jsonData =
+      storedValue && typeof storedValue === "string"
+        ? JSON.parse(storedValue)
+        : {}; // Ensure jsonData is always an object
+
     if (path === "$") {
       jsonData = value; // Set the entire object
     } else {
-      this.setPath(jsonData, path, value); // Set the value at the specified path
+      this.setPath(jsonData, path, value); // Set value at specified path
     }
 
-    this.store.set(key, JSON.stringify(jsonData)); // Store the JSON object;
+    this.store.set(key, JSON.stringify(jsonData)); // Store as JSON string
     this.appendToAOF(`db.json.set`, { key, path, value });
   }
 

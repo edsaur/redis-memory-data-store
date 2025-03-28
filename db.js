@@ -4,6 +4,7 @@ import JsonStore from "./data-type/jsonStore.js";
 import InMemoryStore from "./store.js";
 import ListStore from "./data-type/listsStore.js";
 import SetStore from "./data-type/setStore.js";
+import HashStore from "./data-type/hashStore.js";
 
 class RedisLikeDB {
   constructor(aofFile = "data.aof", snapshotFile = "data.snapshot.json") {
@@ -16,6 +17,7 @@ class RedisLikeDB {
     this.json = new JsonStore(this.store, this.appendToAOF.bind(this));
     this.list = new ListStore(this.store, this.appendToAOF.bind(this));
     this.set = new SetStore(this.store, this.appendToAOF.bind(this));
+    this.hash = new HashStore(this.store, this.appendToAOF.bind(this));
 
     //  Load snapshot file
     this.loadSnapshot();
@@ -36,18 +38,22 @@ class RedisLikeDB {
       const snapshotData = JSON.parse(data);
 
       for (const [key, value] of Object.entries(snapshotData)) {
-        // Convert arrays to Sets where appropriate
+        let parsedValue = value;
         if (Array.isArray(value)) {
-          this.store.set(key, new Set(value));
-        } else {
-          this.store.set(key, value);
+          // Reconstruct Sets from arrays
+          parsedValue = new Set(value);
+        } else if (typeof value === 'object' && value !== null) {
+          // Handle nested objects (for JSON data)
+          parsedValue = value;
         }
+        this.store.set(key, parsedValue);
       }
       console.log("Snapshot loaded");
     } else {
       console.log("No snapshot found");
     }
   }
+
 
   // Replay AOF file
   replayAOF() {
