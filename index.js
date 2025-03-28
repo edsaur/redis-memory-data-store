@@ -47,6 +47,12 @@ console.log(db.json.get("user:2"));
 db.json.arrAppend("user:2", "skills", "Python"); // Should throw an error because path is not an array
 
 db.list.lpush("users", "Alice", "Bob", "Charlie");
+db.list.rpush("users", "David", "Eve");
+console.log(db.list.lrange("users", 0, -1));
+
+console.log(db.list.lpop("users")); // "Alice"
+console.log(db.list.rpop("users")); // "Eve"
+
 console.log(db.list.lrange("users", 0, -1));
 
 
