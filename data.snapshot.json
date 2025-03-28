@@ -1,11 +1,21 @@
 {
-  "username": "AliceBobTheBuilder",
-  "user:1": "{\"name\":\"John\",\"age\":30,\"skills\":[\"JavaScript\"]}",
-  "user:2": "{\"name\":\"John Doe\",\"age\":30,\"skills\":[\"HTML\",\"CSS\",\"Node.js\",\"Python\"],\"hobbies\":[\"Gaming\"]}",
-  "age": "30",
   "users": [
     "Bob",
     "Charlie",
     "David"
-  ]
+  ],
+  "fruits": [
+    "Banana",
+    "Cherry",
+    "Dragonfruit"
+  ],
+  "tropicalFruits": [
+    "Mango",
+    "Pineapple",
+    "Banana"
+  ],
+  "user:1": "{\"name\":\"John\",\"age\":30,\"skills\":[\"JavaScript\"]}",
+  "user:2": "{\"name\":\"John Doe\",\"age\":30,\"skills\":[\"HTML\",\"CSS\",\"Node.js\",\"Python\"],\"hobbies\":[\"Gaming\"]}",
+  "username": "AliceBobTheBuilder",
+  "age": "30"
 }

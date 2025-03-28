@@ -3,6 +3,7 @@ import StringStore from "./data-type/stringStore.js";
 import JsonStore from "./data-type/jsonStore.js";
 import InMemoryStore from "./store.js";
 import ListStore from "./data-type/listsStore.js";
+import SetStore from "./data-type/setStore.js";
 
 class RedisLikeDB {
   constructor(aofFile = "data.aof", snapshotFile = "data.snapshot.json") {
@@ -14,6 +15,7 @@ class RedisLikeDB {
     this.string = new StringStore(this.store, this.appendToAOF.bind(this));
     this.json = new JsonStore(this.store, this.appendToAOF.bind(this));
     this.list = new ListStore(this.store, this.appendToAOF.bind(this));
+    this.set = new SetStore(this.store, this.appendToAOF.bind(this));
 
     //  Load snapshot file
     this.loadSnapshot();
@@ -22,7 +24,7 @@ class RedisLikeDB {
 
   appendToAOF(command, data) {
     const logEntry = JSON.stringify({ command, data });
-  
+
     console.log("Appending to AOF:", logEntry); // ✅ Debug log
     fs.appendFileSync(this.aofFile, logEntry + "\n");
   }
@@ -34,7 +36,12 @@ class RedisLikeDB {
       const snapshotData = JSON.parse(data);
 
       for (const [key, value] of Object.entries(snapshotData)) {
-        this.store.set(key, value);
+        // Convert arrays to Sets where appropriate
+        if (Array.isArray(value)) {
+          this.store.set(key, new Set(value));
+        } else {
+          this.store.set(key, value);
+        }
       }
       console.log("Snapshot loaded");
     } else {
@@ -44,40 +51,43 @@ class RedisLikeDB {
 
   // Replay AOF file
   replayAOF() {
-   if(!fs.existsSync(this.aofFile)) {
-    fs.writeFileSync(this.aofFile, "");
-    console.log("AOF file created");
-    return;
-   }
-
-   const commands = fs.readFileSync(this.aofFile, "utf-8").split("\n");
-
-   for (const command of commands) {
-    try {
-      const parsedCommand = JSON.parse(command)
-      eval(parsedCommand);
-    } catch (error) {
-      console.error(error);
+    if (!fs.existsSync(this.aofFile)) {
+      fs.writeFileSync(this.aofFile, "");
+      console.log("AOF file created");
+      return;
     }
-   }
 
-   console.log("AOF replayed");
+    const aofData = fs.readFileSync(this.aofFile, "utf-8").trim();
+    if (!aofData) return; // File exists but is empty
+
+    const commands = aofData.split("\n").filter((line) => line.trim() !== "");
+
+    for (const command of commands) {
+      try {
+        JSON.parse(command);
+      } catch (error) {
+        console.error("❌ Error parsing AOF command:", error);
+      }
+    }
+
+    console.log("✅ AOF replayed successfully");
   }
 
   //   Save snapshot file
   saveSnapshot() {
-    fs.writeFileSync(this.snapshotFile, JSON.stringify(Object.fromEntries([...this.store.store]), null, 2));
-
+    const snapshotData = {};
+    for (const [key, value] of this.store.store) {
+      // Convert Sets to arrays for JSON serialization
+      snapshotData[key] = value instanceof Set ? Array.from(value) : value;
+    }
+    fs.writeFileSync(this.snapshotFile, JSON.stringify(snapshotData, null, 2));
     console.log("Snapshot saved");
   }
 
   get(key) {
     return this.store.get(key);
   }
-
 }
 
 const db = new RedisLikeDB();
 export default db;
-
-
