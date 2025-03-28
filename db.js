@@ -2,6 +2,7 @@ import fs from "fs";
 import StringStore from "./data-type/stringStore.js";
 import JsonStore from "./data-type/jsonStore.js";
 import InMemoryStore from "./store.js";
+import ListStore from "./data-type/listsStore.js";
 
 class RedisLikeDB {
   constructor(aofFile = "data.aof", snapshotFile = "data.snapshot.json") {
@@ -12,6 +13,7 @@ class RedisLikeDB {
     //  Initialize subsystems
     this.string = new StringStore(this.store, this.appendToAOF.bind(this));
     this.json = new JsonStore(this.store, this.appendToAOF.bind(this));
+    this.list = new ListStore(this.store, this.appendToAOF.bind(this));
 
     //  Load snapshot file
     this.loadSnapshot();
@@ -52,7 +54,8 @@ class RedisLikeDB {
 
    for (const command of commands) {
     try {
-      eval(command);
+      const parsedCommand = JSON.parse(command)
+      eval(parsedCommand);
     } catch (error) {
       console.error(error);
     }
