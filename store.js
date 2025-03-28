@@ -2,12 +2,14 @@
 //  This will include the following methods:
 // set, get, remove, has
 
+import JsonStore from "./data-type/jsonStore.js";
 import StringStore from "./data-type/stringStore.js";
 
 class InMemoryStore {
   constructor() {
     this.store = new Map();
-    this.string = new StringStore(this.store)
+    this.string = new StringStore(this.store);
+    this.json = new JsonStore(this.store);
   }
 
   // CORE FUNCTIONS
