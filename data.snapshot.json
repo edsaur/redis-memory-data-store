@@ -14,8 +14,26 @@
     "Pineapple",
     "Banana"
   ],
-  "user:1": "{\"name\":\"John\",\"age\":30,\"skills\":[\"JavaScript\"]}",
-  "user:2": "{\"name\":\"John Doe\",\"age\":30,\"skills\":[\"HTML\",\"CSS\",\"Node.js\",\"Python\"],\"hobbies\":[\"Gaming\"]}",
+  "user:1": {
+    "name": "Alice",
+    "skills": [
+      "JavaScript"
+    ]
+  },
+  "user:2": {
+    "name": "Bob",
+    "age": "30",
+    "skills": [
+      "HTML",
+      "CSS",
+      "Node.js",
+      "Python"
+    ],
+    "hobbies": [
+      "Gaming"
+    ],
+    "city": "NY"
+  },
   "username": "AliceBobTheBuilder",
-  "age": "30"
+  "age": 30
 }
