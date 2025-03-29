@@ -10,5 +10,4 @@ console.log(db.list.rpop("users")); // "Eve"
 console.log(db.list.lrange("users", 0, -1));
 
 
-// Periodically save snapshot
-setInterval(() => db.saveSnapshot(), 10000);
+db.saveSnapshot();

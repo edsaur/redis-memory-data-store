@@ -15,5 +15,6 @@ console.log("Intersection:", db.set.sinter("fruits", "tropicalFruits")); // Comm
 console.log("Union:", db.set.sunion("fruits", "tropicalFruits")); // All unique fruits
 console.log("Difference:", db.set.sdiff("fruits", "tropicalFruits")); // Fruits in "fruits" but not in "tropicalFruits"
 
-// Save snapshot every 10 seconds
-setInterval(() => db.saveSnapshot(), 10000);
+
+db.saveSnapshot();
+

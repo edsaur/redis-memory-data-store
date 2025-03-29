@@ -22,4 +22,4 @@ console.log(db.json.get("user:2"));
 
 db.json.arrAppend("user:2", "skills", "Python"); // Should throw an error because path is not an array
 
-setInterval(() => db.saveSnapshot(), 10000);
+db.saveSnapshot();

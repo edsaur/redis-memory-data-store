@@ -24,4 +24,4 @@ console.log("age incremented by 5: " + db.get("age")); // Output: 35
 db.string.decBy("age", 5);
 console.log("age decremented by 5: " + db.get("age")); // Output: 30
 
-setInterval(() => db.saveSnapshot(), 10000);
+db.saveSnapshot();
