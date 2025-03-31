@@ -81,5 +81,4 @@ try {
   assert.strictEqual(error.message, "Consumer group does not exist.");
 }
 
-db.saveSnapshot(); // Save the snapshot
-console.log("\nSnapshot saved.");
+db.saveSnapshot(); 
