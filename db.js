@@ -101,7 +101,7 @@ class RedisLikeDB {
 
   // Clear the store
   clearStore() {
-    this.store.clear();
+    this.store.store.clear();
     console.log("Store cleared");
   }
   // Clear the AOF file
@@ -111,7 +111,7 @@ class RedisLikeDB {
   }
   // Clear the snapshot file
   clearSnapshot() {
-      fs.writeFileSync(this.snapshotFile, {});
+      fs.writeFileSync(this.snapshotFile, "{}");
       console.log("Snapshot file cleared");
   }
 }
