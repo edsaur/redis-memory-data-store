@@ -19,6 +19,11 @@ class RedisLikeDB {
     this.set = new SetStore(this.store, this.appendToAOF.bind(this));
     this.hash = new HashStore(this.store, this.appendToAOF.bind(this));
 
+    // Clear the store, AOF, and snapshot files on startup
+    this.clearStore();
+    this.clearAOF();
+    this.clearSnapshot();
+
     //  Load snapshot file
     this.loadSnapshot();
     this.replayAOF();
@@ -92,6 +97,22 @@ class RedisLikeDB {
 
   get(key) {
     return this.store.get(key);
+  }
+
+  // Clear the store
+  clearStore() {
+    this.store.clear();
+    console.log("Store cleared");
+  }
+  // Clear the AOF file
+  clearAOF() {
+      fs.writeFileSync(this.aofFile, "");
+      console.log("AOF file cleared");
+  }
+  // Clear the snapshot file
+  clearSnapshot() {
+      fs.writeFileSync(this.snapshotFile, {});
+      console.log("Snapshot file cleared");
   }
 }
 
