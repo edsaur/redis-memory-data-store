@@ -7,6 +7,7 @@ import SetStore from "./data-type/setStore.js";
 import HashStore from "./data-type/hashStore.js";
 import SortedStore from "./data-type/sortedStore.js";
 import StreamStore from "./data-type/streamStore.js";
+import GeoStore from "./data-type/geospatialStore.js";
 
 class RedisLikeDB {
   constructor(aofFile = "data.aof", snapshotFile = "data.snapshot.json") {
@@ -22,6 +23,7 @@ class RedisLikeDB {
     this.hash = new HashStore(this.store, this.appendToAOF.bind(this));
     this.zset = new SortedStore(this.store, this.appendToAOF.bind(this));
     this.stream = new StreamStore(this.store, this.appendToAOF.bind(this));
+    this.geo = new GeoStore(this.store, this.appendToAOF.bind(this));
 
     // Clear the store, AOF, and snapshot files on startup
     this.clearStore();
@@ -51,7 +53,7 @@ class RedisLikeDB {
         if (Array.isArray(value)) {
           // Reconstruct Sets from arrays
           parsedValue = new Set(value);
-        } else if (typeof value === 'object' && value !== null) {
+        } else if (typeof value === "object" && value !== null) {
           // Handle nested objects (for JSON data)
           parsedValue = value;
         }
@@ -62,7 +64,6 @@ class RedisLikeDB {
       console.log("No snapshot found");
     }
   }
-
 
   // Replay AOF file
   replayAOF() {
@@ -93,7 +94,14 @@ class RedisLikeDB {
     const snapshotData = {};
     for (const [key, value] of this.store.store) {
       // Convert Sets to arrays for JSON serialization
-      snapshotData[key] = value instanceof Set ? Array.from(value) : value;
+      if (value instanceof Set) {
+        snapshotData[key] = Array.from(value);
+      } else if (value instanceof Map) {
+        // Convert Maps to plain objects for JSON serialization
+        snapshotData[key] = Object.fromEntries(value);
+      } else {
+        snapshotData[key] = value;
+      }
     }
     fs.writeFileSync(this.snapshotFile, JSON.stringify(snapshotData, null, 2));
     console.log("Snapshot saved");
@@ -110,13 +118,13 @@ class RedisLikeDB {
   }
   // Clear the AOF file
   clearAOF() {
-      fs.writeFileSync(this.aofFile, "");
-      console.log("AOF file cleared");
+    fs.writeFileSync(this.aofFile, "");
+    console.log("AOF file cleared");
   }
   // Clear the snapshot file
   clearSnapshot() {
-      fs.writeFileSync(this.snapshotFile, "{}");
-      console.log("Snapshot file cleared");
+    fs.writeFileSync(this.snapshotFile, "{}");
+    console.log("Snapshot file cleared");
   }
 }
 
