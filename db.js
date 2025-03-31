@@ -6,6 +6,7 @@ import ListStore from "./data-type/listsStore.js";
 import SetStore from "./data-type/setStore.js";
 import HashStore from "./data-type/hashStore.js";
 import SortedStore from "./data-type/sortedStore.js";
+import StreamStore from "./data-type/streamStore.js";
 
 class RedisLikeDB {
   constructor(aofFile = "data.aof", snapshotFile = "data.snapshot.json") {
@@ -20,6 +21,7 @@ class RedisLikeDB {
     this.set = new SetStore(this.store, this.appendToAOF.bind(this));
     this.hash = new HashStore(this.store, this.appendToAOF.bind(this));
     this.zset = new SortedStore(this.store, this.appendToAOF.bind(this));
+    this.stream = new StreamStore(this.store, this.appendToAOF.bind(this));
 
     // Clear the store, AOF, and snapshot files on startup
     this.clearStore();
