@@ -1,39 +1,6 @@
 {
-  "users": [
-    "Bob",
-    "Charlie",
-    "David"
-  ],
-  "fruits": [
-    "Banana",
-    "Cherry",
-    "Dragonfruit"
-  ],
-  "tropicalFruits": [
-    "Mango",
-    "Pineapple",
-    "Banana"
-  ],
-  "user:1": {
-    "name": "Alice",
-    "skills": [
-      "JavaScript"
-    ]
-  },
-  "user:2": {
-    "name": "Bob",
-    "age": "30",
-    "skills": [
-      "HTML",
-      "CSS",
-      "Node.js",
-      "Python"
-    ],
-    "hobbies": [
-      "Gaming"
-    ],
-    "city": "NY"
-  },
-  "username": "AliceBobTheBuilder",
-  "age": 30
+  "user:21": {
+    "health": "21",
+    "age": "21"
+  }
 }
