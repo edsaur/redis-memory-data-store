@@ -8,6 +8,8 @@ import HashStore from "./data-type/hashStore.js";
 import SortedStore from "./data-type/sortedStore.js";
 import StreamStore from "./data-type/streamStore.js";
 import GeoStore from "./data-type/geospatialStore.js";
+import BitmapsStore from "./data-type/bitmapsStore.js";
+import BitfieldStore from "./data-type/bitfieldStore.js";
 
 class RedisLikeDB {
   constructor(aofFile = "data.aof", snapshotFile = "data.snapshot.json") {
@@ -24,6 +26,8 @@ class RedisLikeDB {
     this.zset = new SortedStore(this.store, this.appendToAOF.bind(this));
     this.stream = new StreamStore(this.store, this.appendToAOF.bind(this));
     this.geo = new GeoStore(this.store, this.appendToAOF.bind(this));
+    this.bitmap = new BitmapsStore(this.store, this.appendToAOF.bind(this));
+    this.bitfield = new BitfieldStore(this.store, this.appendToAOF.bind(this));
 
     // Clear the store, AOF, and snapshot files on startup
     this.clearStore();
