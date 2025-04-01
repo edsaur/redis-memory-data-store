@@ -10,6 +10,7 @@ import StreamStore from "./data-type/streamStore.js";
 import GeoStore from "./data-type/geospatialStore.js";
 import BitmapsStore from "./data-type/bitmapsStore.js";
 import BitfieldStore from "./data-type/bitfieldStore.js";
+import HyperLogLogStore from "./data-type/hyperloglogStore.js";
 
 class RedisLikeDB {
   constructor(aofFile = "data.aof", snapshotFile = "data.snapshot.json") {
@@ -28,6 +29,7 @@ class RedisLikeDB {
     this.geo = new GeoStore(this.store, this.appendToAOF.bind(this));
     this.bitmap = new BitmapsStore(this.store, this.appendToAOF.bind(this));
     this.bitfield = new BitfieldStore(this.store, this.appendToAOF.bind(this));
+    this.hll = new HyperLogLogStore(this.store, this.appendToAOF.bind(this));
 
     // Clear the store, AOF, and snapshot files on startup
     this.clearStore();
