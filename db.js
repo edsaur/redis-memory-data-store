@@ -12,10 +12,12 @@ import BitmapsStore from "./data-type/bitmapsStore.js";
 import BitfieldStore from "./data-type/bitfieldStore.js";
 import HyperLogLogStore from "./data-type/hyperloglogStore.js";
 import TimeSeriesStore from "./data-type/timeSeriesStore.js";
+import TTLStore from "./TTLStore.js";
 
 class RedisLikeDB {
   constructor(aofFile = "data.aof", snapshotFile = "data.snapshot.json") {
     this.store = new InMemoryStore();
+    this.ttl = new TTLStore(this.store, this.appendToAOF.bind(this));
     this.aofFile = aofFile;
     this.snapshotFile = snapshotFile;
 
@@ -34,13 +36,15 @@ class RedisLikeDB {
     this.ts = new TimeSeriesStore(this.store, this.appendToAOF.bind(this));
     
     // Clear the store, AOF, and snapshot files on startup
-    this.clearStore();
-    this.clearAOF();
-    this.clearSnapshot();
+    // this.clearStore();
+    // this.clearSnapshot();
 
     //  Load snapshot file
     this.loadSnapshot();
     this.replayAOF();
+
+    // Start TTL cleanup process every second
+    setInterval(() => this.ttl.cleanup(), 1000);
   }
 
   appendToAOF(command, data) {
