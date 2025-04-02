@@ -5,38 +5,43 @@ console.log("\n✅ TS.CREATE Test");
 db.ts.create("temperature");
 console.log(db.get("temperature")); // Should print an empty array []
 
-// Test: Adding Data Points
-console.log("\n✅ TS.ADD Test");
-db.ts.add("temperature", 22.5);
-db.ts.add("temperature", 23.1);
-db.ts.add("temperature", 24.0);
-console.log(db.get("temperature")); // Should print an array with timestamps
+// Get current timestamp
+const now = Date.now();
+const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
+
+// Test: Adding Data Points (1-hour intervals)
+console.log("\n✅ TS.ADD Test with 1-Hour Intervals");
+const timestamps = [
+    now - 3 * oneHour, // 3 hours ago
+    now - 2 * oneHour, // 2 hours ago
+    now - 1 * oneHour, // 1 hour ago
+    now // Now
+];
+
+const values = [18.5, 20.1, 21.3, 22.8];
+
+timestamps.forEach((timestamp, index) => {
+    db.ts.add("temperature", timestamp, values[index]);
+});
+
+console.log(db.get("temperature")); // Should print stored data with timestamps
 
 // Test: Getting Latest Data Point
 console.log("\n✅ TS.GET Test");
 const latest = db.ts.get("temperature");
-console.log(latest); // Should print the latest timestamp and value
+console.log("latest: " + latest); // Should print the latest timestamp and value
 
-// Test: Querying a Range of Data
-console.log("\n✅ TS.RANGE Test");
-const now = Date.now();
-const tenSecondsAgo = now - 10000;
-const fiveSecondsAgo = now - 5000;
-
-// Add test data with manual timestamps
-db.ts.add("temperature", 20.0, tenSecondsAgo);
-db.ts.add("temperature", 21.5, fiveSecondsAgo);
-const rangeData = db.ts.range("temperature", tenSecondsAgo, now);
-console.log(rangeData); // Should return all data points within the last 10 seconds
+// Test: Querying a Range of Data (Last 3 Hours)
+console.log("\n✅ TS.RANGE Test (Last 3 Hours)");
+const rangeData = db.ts.range("temperature", now - 3 * oneHour, now);
+console.log("Ranges Data: " + rangeData); // Should return all data points in the last 3 hours
 
 // Test: Edge Case - Querying an Empty Series
 console.log("\n✅ TS.GET on Empty Series");
 db.ts.create("humidity");
-console.log(db.ts.get("humidity")); // Should return null or an error
+console.log(db.ts.get("humidity")); // Should return undefined
 
 // Test: Querying Out-of-Bounds Range
 console.log("\n✅ TS.RANGE Out-of-Bounds Test");
-const outOfBoundsData = db.ts.range("temperature", 0, 1000); // Before Unix epoch
+const outOfBoundsData = db.ts.range("temperature", 0, now - 4 * oneHour); // Before first data point
 console.log(outOfBoundsData); // Should return an empty array []
-
-db.saveSnapshot(); // Save the current state to a snapshot file
