@@ -62,9 +62,13 @@ class BitfieldStore {
     this._setBinaryString(key, binaryString);
 
     // Append to AOF log
-    this.appendToAOF(
-      `BITFIELD ${key} SET ${type} ${offset} ${value} OVERFLOW ${overflowMode}`
-    );
+    this.appendToAOF("db.bitfield.setBitfield", {
+      key,
+      type,
+      offset,
+      value,
+      overflowMode,
+    });
   }
 
   getBitfield(key, type, offset) {
@@ -86,9 +90,13 @@ class BitfieldStore {
     this.setBitfield(key, type, offset, newValue, overflowMode);
 
     // Append to AOF log
-    this.appendToAOF(
-      `BITFIELD ${key} INCRBY ${type} ${offset} ${increment} OVERFLOW ${overflowMode}`
-    );
+    this.appendToAOF("db.bitfield.incrByBitfield", {
+      key,
+      type,
+      offset,
+      value,
+      overflowMode,
+    });
 
     return this.getBitfield(key, type, offset);
   }

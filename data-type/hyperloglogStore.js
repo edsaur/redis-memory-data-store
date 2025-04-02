@@ -41,7 +41,8 @@ class HyperLogLogStore {
         });
 
         this.store.set(key, hyperLogLog);
-        this.appendToAOF(`PFADD ${key} ${elements.join(' ')}`);
+        
+        this.appendToAOF('db.hll.pfadd', {key, ...elements});
     }
 
     // PFCOUNT - Returns the estimated cardinality
@@ -78,7 +79,7 @@ class HyperLogLogStore {
         });
 
         this.store.set(destKey, mergedHLL);
-        this.appendToAOF(`PFMERGE ${destKey} ${sourceKeys.join(' ')}`);
+        this.appendToAOF('db.hll.pfmerge', {destKey, ...sourceKeys});
     }
 }
 
