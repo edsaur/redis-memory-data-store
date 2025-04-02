@@ -83,26 +83,26 @@ class TimeSeriesStore {
         const dataInRange = this.range(key, startTime, endTime);
         let result;
 
-        if (aggregationType === "sum") {
+        if (aggregationType === "SUM") {
             result = dataInRange.reduce((acc, { value }) => acc + value, 0);
-        } else if (aggregationType === "avg") {
+        } else if (aggregationType === "AVG") {
             result = dataInRange.reduce((acc, { value }) => acc + value, 0) / dataInRange.length;
-        } else if (aggregationType === "max") {
+        } else if (aggregationType === "MAX") {
             result = Math.max(...dataInRange.map(({ value }) => value));
-        } else if (aggregationType === "min") {
+        } else if (aggregationType === "MIN") {
             result = Math.min(...dataInRange.map(({ value }) => value));
-        } else if (aggregationType === "count") {
+        } else if (aggregationType === "COUNT") {
             result = dataInRange.length; // Number of points in the range
-        } else if (aggregationType === "first") {
+        } else if (aggregationType === "FIRST") {
             result = dataInRange.length > 0 ? dataInRange[0].value : null; // First data point
-        } else if (aggregationType === "last") {
+        } else if (aggregationType === "LAST") {
             result = dataInRange.length > 0 ? dataInRange[dataInRange.length - 1].value : null; // Last data point
         } else {
             throw new Error(`Unsupported aggregation type: ${aggregationType}`);
         }
         
 
-        return result;
+        return result + "\u00B0C";
     }
 }
 
