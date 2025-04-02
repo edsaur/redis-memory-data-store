@@ -63,7 +63,7 @@ console.log(downsampledData);  // Expect fewer data points
 
 // ✅ Aggregation: Get average temperature over the last 12 hours
 console.log("\n✅ TS.AGGREGATE (AVG over last 12 hours)");
-const avgTemp = db.ts.aggregate("temperature", now - (12 * 3600 * 1000), now, "avg");
+const avgTemp = db.ts.aggregate("temperature", now - (12 * 3600 * 1000), now, "AVG");
 console.log(`Average Temperature (last 12h): ${avgTemp}`);
 
 // ✅ Aggregation: Get maximum temperature over last 6 hours
