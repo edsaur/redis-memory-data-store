@@ -1,2 +1,0 @@
-{"command":"db.hash.hset","data":{"key":"user:21","field":"health","value":"21"}}
-{"command":"db.hash.hset","data":{"key":"user:21","field":"age","value":"21"}}
