@@ -80,14 +80,27 @@ class TimeSeriesStore {
 
     // Aggregation: Sum over a specific interval (e.g., sum of values in a range)
     aggregate(key, startTime, endTime, aggregationType = 'sum') {
-        const dataInRange = this.tsRange(key, startTime, endTime);
+        const dataInRange = this.range(key, startTime, endTime);
         let result;
 
-        if (aggregationType === 'sum') {
+        if (aggregationType === "sum") {
             result = dataInRange.reduce((acc, { value }) => acc + value, 0);
-        } else if (aggregationType === 'avg') {
+        } else if (aggregationType === "avg") {
             result = dataInRange.reduce((acc, { value }) => acc + value, 0) / dataInRange.length;
+        } else if (aggregationType === "max") {
+            result = Math.max(...dataInRange.map(({ value }) => value));
+        } else if (aggregationType === "min") {
+            result = Math.min(...dataInRange.map(({ value }) => value));
+        } else if (aggregationType === "count") {
+            result = dataInRange.length; // Number of points in the range
+        } else if (aggregationType === "first") {
+            result = dataInRange.length > 0 ? dataInRange[0].value : null; // First data point
+        } else if (aggregationType === "last") {
+            result = dataInRange.length > 0 ? dataInRange[dataInRange.length - 1].value : null; // Last data point
+        } else {
+            throw new Error(`Unsupported aggregation type: ${aggregationType}`);
         }
+        
 
         return result;
     }
