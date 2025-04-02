@@ -101,7 +101,7 @@ const server = net.createServer((socket) => {
       step = null;
       return;
     } else if (step === "get_key") {
-      const value = db.get(input);
+      const value = db.string.get(input);
       socket.write(value !== null ? `+${value}\r\n` : "$-1\r\n");
       socket.write(displayMenu());
       step = null;
@@ -373,9 +373,7 @@ const server = net.createServer((socket) => {
       socket.write(displayMenu());
       step = null;
       return;
-    } 
-    
-    else if (step === "sadd_key") {
+    } else if (step === "sadd_key") {
       tempKey = input;
       socket.write("Enter value to add: ");
       step = "sadd_value";
@@ -530,7 +528,7 @@ const server = net.createServer((socket) => {
       return;
     }
 
-    // Sorted Set commands    
+    // Sorted Set commands
     else if (step === "zadd_key") {
       tempKey = input;
       socket.write("Enter score: ");
@@ -633,7 +631,7 @@ const server = net.createServer((socket) => {
       socket.write(displayMenu());
       step = null;
       return;
-    }  else if (step === "xadd_key") {
+    } else if (step === "xadd_key") {
       tempKey = input;
       socket.write(
         "Enter field-value pairs (comma-separated, e.g., name,Alice,age,25): "
@@ -768,8 +766,8 @@ const server = net.createServer((socket) => {
       step = null;
       tempKey = null;
       return;
-    } 
-    
+    }
+
     // Geospatial commands
     else if (step === "geoadd_key") {
       tempKey = input;
@@ -1115,6 +1113,8 @@ const server = net.createServer((socket) => {
         break;
 
       case "50":
+        this.clearStore();
+        this.clearSnapshot();
         socket.write("Bye!\r\n");
         socket.end();
         break;

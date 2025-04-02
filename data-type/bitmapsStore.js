@@ -25,13 +25,11 @@ class BitmapsStore {
 
   getBit(key, offset) {
     const binaryStr = this.store.get(key) || "";
-    this.appendToAOF("db.bitmaps.getBitmap", { key, offset });
     return offset < binaryStr.length ? Number(binaryStr[offset]) : 0;
   }
 
   bitCount(key) {
     const binaryStr = this.store.get(key) || "";
-    this.appendToAOF("db.bitmaps.bitCount", { key });
     return (binaryStr.match(/1/g) || []).length;
   }
 
