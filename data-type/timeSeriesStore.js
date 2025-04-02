@@ -38,9 +38,9 @@ class TimeSeriesStore {
             throw new Error(`Time series ${key} does not exist`);
         }
         const timeSeries = this.store.get(key);
-        return timeSeries[timeSeries.length - 1]; // Get the most recent point
+        return timeSeries.length > 0 ? timeSeries[timeSeries.length - 1] : null;
     }
-
+    
     // Downsampling: Aggregate values over a specified interval (e.g., average)
     downsample(key, interval) {
         if (!this.store.has(key)) {
