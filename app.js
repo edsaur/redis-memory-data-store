@@ -1803,12 +1803,18 @@ const server = net.createServer((socket) => {
         break;
       case "69":
         socket.write("Enter key for PTTL");
+        step = "pttl";
+        break;
       case "70":
+        socket.write("Enter key for PERSIST: ");
+        step = "persist";
+        break;
+      case "71":
         db.saveSnapshot();
         socket.write("+OK Snapshot saved\r\n");
         socket.write(displayMenu());
         break;
-      case "71":
+      case "72":
         db.clearStore();
         db.clearSnapshot();
         process.exit(0);
