@@ -13,11 +13,13 @@ import BitfieldStore from "./data-type/bitfieldStore.js";
 import HyperLogLogStore from "./data-type/hyperloglogStore.js";
 import TimeSeriesStore from "./data-type/timeSeriesStore.js";
 import TTLStore from "./TTLStore.js";
+import TransactionStore from "./TransactionsStore.js";
 
 class RedisLikeDB {
   constructor(aofFile = "data.aof", snapshotFile = "data.snapshot.json") {
     this.store = new InMemoryStore();
     this.ttl = new TTLStore(this.store, this.appendToAOF.bind(this));
+    this.transaction = new TransactionStore(this.store, this.appendToAOF.bind(this));
     this.aofFile = aofFile;
     this.snapshotFile = snapshotFile;
 
