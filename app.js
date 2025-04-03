@@ -53,8 +53,25 @@ const displayMenu = () => {
 46. GEOADD (Geospatial)
 47. GEOSEARCH (Geospatial)
 48. GEODIST (Geospatial)
-49. SAVE snapshot
-50. Exit
+49. BITMAP SETBIT
+50. BITMAP GETBIT
+51. BITMAP BITCOUNT
+52. BITMAP BITOP
+53. BITFIELD SET
+54. BITFIELD GET
+55. BITFIELD INCRBY
+56. BITFIELD
+57. PFADD (HyperLogLog)
+58. PFCOUNT (HyperLogLog)
+59. PFMERGE (HyperLogLog)
+60. TS.CREATE (Time Series)
+61. TS.ADD (Time Series)
+62. TS.GET (Time Series)
+63. TS.RANGE (Time Series)
+64. TS.DOWNSAMPLE (Time Series)
+65. TS.AGGREGATE (Time Series)
+66. SAVE snapshot
+67. Exit
 Enter your choice: `;
 };
 
@@ -81,6 +98,18 @@ const server = net.createServer((socket) => {
   let endID = null; // Declare globally
 
   let group = null;
+  let tempOp = null;
+  let tempOffset = null;
+  let tempStart = null;
+  let tempEnd = null;
+  let tempMin = null;
+  let tempMax = null;
+  let tempIndex = null;
+  let tempPath = null;
+  let tempFields = null;
+  let tempValue = null;
+  let tempType = null;
+  let tempOverflow = null;
 
   socket.on("data", (data) => {
     const input = data.toString().trim();
@@ -88,43 +117,6 @@ const server = net.createServer((socket) => {
     // Handle multi-step input
 
     // String commands
-    if (step === "set_key") {
-      tempKey = input;
-      socket.write("Enter value: ");
-      step = "set_value";
-      return;
-    } else if (step === "set_value") {
-      db.string.set(tempKey, input);
-      // db.appendToAOF("db.string.set", { key: tempKey, value: input });
-      socket.write(`+OK (Set ${tempKey} = ${input})\r\n`);
-      socket.write(displayMenu());
-      step = null;
-      return;
-    } else if (step === "get_key") {
-      const value = db.string.get(input);
-      socket.write(value !== null ? `+${value}\r\n` : "$-1\r\n");
-      socket.write(displayMenu());
-      step = null;
-      return;
-    } else if (step === "append_key") {
-      tempKey = input;
-      socket.write("Enter value to append: ");
-      step = "append_value";
-      return;
-    } else if (step === "append_value") {
-      db.string.append(tempKey, input);
-      // db.appendToAOF("db.string.append", { key: tempKey, value: input });
-      socket.write(`+OK (Appended ${input} to ${tempKey})\r\n`);
-      socket.write(displayMenu());
-      step = null;
-      return;
-    } else if (step === "strlen_key") {
-      const length = db.string.strlen(input);
-      socket.write(`:${length}\r\n`);
-      socket.write(displayMenu());
-      step = null;
-      return;
-    }
     if (step === "set_key") {
       tempKey = input;
       socket.write("Enter value: ");
@@ -865,6 +857,538 @@ const server = net.createServer((socket) => {
       return;
     }
 
+    // Bitmap commands
+    else if (step === "setbit_key") {
+      tempKey = input;
+      step = "setbit_offset";
+      socket.write("Enter bit offset:\r\n");
+      return;
+    } else if (step === "setbit_offset") {
+      tempOffset = parseInt(input);
+      if (isNaN(tempOffset) || tempOffset < 0) {
+        socket.write("-ERR: Invalid offset\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      step = "setbit_value";
+      socket.write("Enter bit value (0 or 1):\r\n");
+      return;
+    } else if (step === "setbit_value") {
+      const bitValue = parseInt(input);
+      if (bitValue !== 0 && bitValue !== 1) {
+        socket.write("-ERR: Invalid bit value\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+
+      db.bitmap.setBit(tempKey, tempOffset, bitValue);
+      socket.write(`+Bit set at offset ${tempOffset} in key '${tempKey}'\r\n`);
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      tempOffset = null;
+      return;
+    } else if (step === "getbit_key") {
+      tempKey = input;
+      step = "getbit_offset";
+      socket.write("Enter bit offset:\r\n");
+      return;
+    } else if (step === "getbit_offset") {
+      const offset = parseInt(input);
+      if (isNaN(offset) || offset < 0) {
+        socket.write("-ERR: Invalid offset\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      const bitValue = db.bitmap.getBit(tempKey, offset);
+      socket.write(
+        `+Bit at offset ${offset} in key '${tempKey}': ${bitValue}\r\n`
+      );
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      return;
+    } else if (step === "bitcount_key") {
+      tempKey = input;
+      const count = db.bitmap.bitCount(tempKey);
+      socket.write(`+Number of set bits in '${tempKey}': ${count}\r\n`);
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      return;
+    } else if (step === "bitop_op") {
+      tempOp = input.trim().toUpperCase();
+      console.log(tempOp);
+      if (!["AND", "OR", "XOR", "NOT"].includes(tempOp)) {
+        socket.write("-ERR: Invalid operation (use AND, OR, XOR, NOT)\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      step = "bitop_destkey";
+      socket.write("Enter destination key:\r\n");
+      return;
+    } else if (step === "bitop_destkey") {
+      tempKey = input;
+      step = "bitop_keys";
+      socket.write("Enter source keys (comma-separated):\r\n");
+      return;
+    } else if (step === "bitop_keys") {
+      const keys = input.split(",").map((key) => key.trim());
+      const resultLength = db.bitmap.bitOp(tempOp, tempKey, ...keys);
+      socket.write(
+        `+Bit operation '${tempOp}' applied. Result length: ${resultLength}\r\n`
+      );
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      tempOp = null;
+      return;
+    } else if (step === "bitfield_set_key") {
+      tempKey = input;
+      socket.write("Enter bitfield type (u8, s8, u16, s16, u32, s32): ");
+      step = "bitfield_type";
+      return;
+    } else if (step === "bitfield_type") {
+      tempType = input.toLowerCase();
+      socket.write("Enter offset: ");
+      step = "bitfield_offset";
+      return;
+    } else if (step === "bitfield_offset") {
+      tempOffset = parseInt(input);
+      if (isNaN(tempOffset) || tempOffset < 0) {
+        socket.write("-ERR: Invalid offset\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      socket.write("Enter value: ");
+      step = "bitfield_value";
+      return;
+    } else if (step === "bitfield_value") {
+      tempValue = parseInt(input);
+      if (isNaN(tempValue)) {
+        socket.write("-ERR: Invalid value\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      socket.write("Enter overflow mode (WRAP, SAT, FAIL): ");
+      step = "bitfield_overflow";
+      return;
+    } else if (step === "bitfield_overflow") {
+      tempOverflow = input.trim().toUpperCase();
+      if (!["WRAP", "SAT", "FAIL"].includes(tempOverflow)) {
+        tempOverflow = "WRAP";
+      }
+
+      // Execute the setBitfield command
+      db.bitfield.setBitfield(
+        tempKey,
+        tempType,
+        tempOffset,
+        tempValue,
+        tempOverflow
+      );
+      socket.write("+OK\r\n");
+
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      tempType = null;
+      tempOffset = null;
+      tempValue = null;
+      tempOverflow = null;
+      return;
+    } else if (step === "get_bitfield") {
+      tempKey = input;
+      // For getting the bitfield
+      socket.write("Enter bitfield type (u8, s8, u16, s16, u32, s32): ");
+      step = "get_bitfield_type";
+      return;
+    } else if (step === "get_bitfield_type") {
+      tempType = input.toLowerCase();
+      socket.write("Enter offset: ");
+      step = "get_bitfield_offset";
+      return;
+    } else if (step === "get_bitfield_offset") {
+      tempOffset = parseInt(input);
+      if (isNaN(tempOffset) || tempOffset < 0) {
+        socket.write("-ERR: Invalid offset\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+
+      // Fetch the bitfield value
+      console.log(
+        `Fetching bitfield for key: ${tempKey}, type: ${tempType}, offset: ${tempOffset}`
+      );
+      const result = db.bitfield.getBitfield(tempKey, tempType, tempOffset);
+      socket.write(`+${result}\r\n`);
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      tempType = null;
+      tempOffset = null;
+      return;
+    } else if (step === "incrby_bitfield") {
+      // For the incrBy operation
+      socket.write("Enter bitfield type (u8, s8, u16, s16, u32, s32): ");
+      step = "incrby_type";
+      return;
+    } else if (step === "incrby_type") {
+      tempType = input.toLowerCase();
+      socket.write("Enter offset: ");
+      step = "incrby_offset";
+      return;
+    } else if (step === "incrby_offset") {
+      tempOffset = parseInt(input);
+      if (isNaN(tempOffset) || tempOffset < 0) {
+        socket.write("-ERR: Invalid offset\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      socket.write("Enter increment value: ");
+      step = "incrby_value";
+      return;
+    } else if (step === "incrby_value") {
+      tempValue = parseInt(input);
+      if (isNaN(tempValue)) {
+        socket.write("-ERR: Invalid value\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      socket.write("Enter overflow mode (WRAP, SAT, FAIL): ");
+      step = "incrby_overflow";
+      return;
+    } else if (step === "incrby_overflow") {
+      tempOverflow = input.toUpperCase();
+      if (!["WRAP", "SAT", "FAIL"].includes(tempOverflow)) {
+        socket.write("-ERR: Invalid overflow mode (use WRAP, SAT, FAIL)\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+
+      // Execute the incrByBitfield command
+      const result = db.bitfield.incrByBitfield(
+        tempKey,
+        tempType,
+        tempOffset,
+        tempValue,
+        tempOverflow
+      );
+      socket.write(`:${result}\r\n`);
+
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      tempType = null;
+      tempOffset = null;
+      tempValue = null;
+      tempOverflow = null;
+      return;
+    } else if (step === "bitfield_operations") {
+      // Handle EXECUTE operation where multiple bitfield commands can be given
+      const operations = input.split(";");
+      const parsedOperations = operations.map((op) => {
+        const parts = op.trim().split(" ");
+        if (parts.length < 3) {
+          socket.write(
+            "-ERR: Invalid operation format. Use SET|GET|INCRBY <type> <offset> <value>\r\n"
+          );
+          socket.write(displayMenu());
+          step = null;
+          return;
+        }
+
+        const [operation, type, offset, value] = parts;
+        return [operation.toUpperCase(), type.toLowerCase(), offset, value];
+      });
+
+      // Execute multiple operations
+      try {
+        const results = db.bitfield.executeBitfieldOperations(
+          tempKey,
+          parsedOperations
+        );
+        results.forEach((result) => {
+          socket.write(`+${result}\r\n`);
+        });
+      } catch (error) {
+        socket.write("-ERR: " + error.message + "\r\n");
+      }
+
+      socket.write(displayMenu());
+      step = null;
+      return;
+    }
+
+    // Hyperloglog commands
+    else if (step === "pfadd_key") {
+      tempKey = input;
+      step = "pfadd_elements";
+      socket.write("Enter elements (comma-separated):\r\n");
+      return;
+    } else if (step === "pfadd_elements") {
+      const elements = input.split(",").map((el) => el.trim());
+      db.hll.pfAdd(tempKey, ...elements);
+      socket.write(`+Elements added to HyperLogLog for key '${tempKey}'\r\n`);
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      return;
+    } else if (step === "pfcount_key") {
+      tempKey = input;
+      const count = db.hll.pfCount(tempKey);
+      socket.write(`+Estimated cardinality: ${count}\r\n`);
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      return;
+    } else if (step === "pfmerge_destkey") {
+      tempKey = input;
+      step = "pfmerge_sourcekeys";
+      socket.write("Enter source keys to merge (comma-separated):\r\n");
+      return;
+    } else if (step === "pfmerge_sourcekeys") {
+      const sourceKeys = input.split(",").map((key) => key.trim());
+      db.hll.pfMerge(tempKey, ...sourceKeys);
+      socket.write(`+HyperLogLogs merged into '${tempKey}'\r\n`);
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      return;
+    } else if (step === "ts_create_key") {
+      tempKey = input;
+      if (!tempKey) {
+        socket.write("-ERR: Write a key name\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      try {
+        db.ts.create(tempKey);
+        socket.write(`+Time series '${tempKey}' created\r\n`);
+      } catch (error) {
+        socket.write(`-ERR: ${error.message}\r\n`);
+      }
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      return;
+    } else if (step === "ts_add") {
+      tempKey = input;
+      if (!tempKey) {
+        socket.write("-ERR: Write a key name\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      socket.write("Enter timestamp: ");
+      step = "ts_add_timestamp";
+      return;
+    } else if (step === "ts_add_timestamp") {
+      let timestamp = parseInt(input);
+      if (isNaN(timestamp)) {
+        socket.write("-ERR: Invalid timestamp\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      socket.write("Enter value: ");
+      step = "ts_add_value";
+      return;
+    } else if (step === "ts_add_value") {
+      let value = parseInt(input);
+      if (isNaN(value)) {
+        socket.write("-ERR: Invalid value\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      console.log(
+        `Adding data point to time series '${tempKey}' with timestamp ${timestamp} and value ${value}`
+      );
+      try {
+        db.ts.add(tempKey, timestamp, value);
+        socket.write(`+Data point added to time series '${tempKey}'\r\n`);
+      } catch (error) {
+        socket.write(`-ERR: ${error.message}\r\n`);
+      }
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      return;
+    } else if (step === "ts_range") {
+      tempKey = input;
+      if (!tempKey) {
+        socket.write("-ERR: Write a key name\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      socket.write("Enter start timestamp: ");
+      step = "ts_range_start";
+      return;
+    } else if (step === "ts_range_start") {
+      let startTime = parseInt(input);
+      if (isNaN(startTime)) {
+        socket.write("-ERR: Invalid start timestamp\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      socket.write("Enter end timestamp: ");
+      step = "ts_range_end";
+      return;
+    } else if (step === "ts_range_end") {
+      let endTime = parseInt(input);
+      if (isNaN(endTime)) {
+        socket.write("-ERR: Invalid end timestamp\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      try {
+        const dataPoints = db.ts.range(tempKey, startTime, endTime);
+        socket.write(`*${dataPoints.length}\r\n`);
+        for (let dataPoint of dataPoints) {
+          socket.write(`${dataPoint.timestamp} ${dataPoint.value}\r\n`);
+        }
+      } catch (error) {
+        socket.write(`-ERR: ${error.message}\r\n`);
+      }
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      return;
+    } else if (step === "ts_get") {
+      tempKey = input;
+      if (!tempKey) {
+        socket.write("-ERR: Write a key name\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      try {
+        const ts = db.ts.get(tempKey);
+        if (ts) {
+          socket.write(`*1\r\n${ts.timestamp} ${ts.value}\r\n`);
+        } else {
+          socket.write("-ERR: No data points available\r\n");
+        }
+      } catch (error) {
+        socket.write(`-ERR: ${error.message}\r\n`);
+      }
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      return;
+    } else if (step === "ts_downsample") {
+      tempKey = input;
+      if (!tempKey) {
+        socket.write("-ERR: Write a key name\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      socket.write("Enter downsampling interval: ");
+      step = "ts_downsample_interval";
+      return;
+    } else if (step === "ts_downsample_interval") {
+      let interval = parseInt(input);
+      if (isNaN(interval) || interval <= 0) {
+        socket.write("-ERR: Invalid interval\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      try {
+        const downsampledData = db.ts.downsample(tempKey, interval);
+        socket.write(`+Downsampled data for '${tempKey}':\r\n`);
+        for (let { timestamp, value } of downsampledData) {
+          socket.write(`${timestamp}: ${value}\r\n`);
+        }
+      } catch (error) {
+        socket.write(`-ERR: ${error.message}\r\n`);
+      }
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      return;
+    } else if (step === "ts_aggregate") {
+      tempKey = input;
+      if (!tempKey) {
+        socket.write("-ERR: Write a key name\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      socket.write("Enter start timestamp: ");
+      step = "ts_aggregate_start";
+      return;
+    } else if (step === "ts_aggregate_start") {
+      let startTime = parseInt(input);
+      if (isNaN(startTime)) {
+        socket.write("-ERR: Invalid start timestamp\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      socket.write("Enter end timestamp: ");
+      step = "ts_aggregate_end";
+      return;
+    } else if (step === "ts_aggregate_end") {
+      let endTime = parseInt(input);
+      if (isNaN(endTime)) {
+        socket.write("-ERR: Invalid end timestamp\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      socket.write(
+        "Enter aggregation type (SUM, AVG, MAX, MIN, COUNT, FIRST, LAST): "
+      );
+      step = "ts_aggregate_type";
+      return;
+    } else if (step === "ts_aggregate_type") {
+      let aggType = input.toUpperCase();
+      const validAggTypes = [
+        "SUM",
+        "AVG",
+        "MAX",
+        "MIN",
+        "COUNT",
+        "FIRST",
+        "LAST",
+      ];
+      if (!validAggTypes.includes(aggType)) {
+        socket.write("-ERR: Invalid aggregation type\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      try {
+        const result = db.ts.aggregate(tempKey, startTime, endTime, aggType);
+        socket.write(
+          `+Aggregation result (${aggType}) for '${tempKey}': ${result}\r\n`
+        );
+      } catch (error) {
+        socket.write(`-ERR: ${error.message}\r\n`);
+      }
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      return;
+    }
+
     switch (input) {
       case "1":
         socket.write("Enter key for SET: ");
@@ -1107,16 +1631,95 @@ const server = net.createServer((socket) => {
         break;
 
       case "49":
+        socket.write("Enter key for SETBIT: ");
+        step = "setbit_key";
+        break;
+      case "50":
+        socket.write("Enter key for GETBIT: ");
+        step = "getbit_key";
+        break;
+      case "51":
+        socket.write("Enter key for BITCOUNT: ");
+        step = "bitcount_key";
+        break;
+      case "52":
+        socket.write("Enter operation (AND, OR, XOR, NOT) for BITOP: ");
+        step = "bitop_op";
+        break;
+      case "53":
+        socket.write("Enter key for BITFIELD SET: ");
+        step = "bitfield_set_key";
+        break;
+
+      case "54":
+        socket.write("Enter key for BITFIELD GET: ");
+        step = "get_bitfield";
+        break;
+
+      case "55":
+        socket.write("Enter key for BITFIELD INCRBY: ");
+        step = "incrby_bitfield";
+        break;
+      case "56":
+        socket.write("Enter operation for BITFIELD (SET, GET, INCRBY): ");
+        step = "bitfield_operations";
+        break;
+
+      case "57":
+        socket.write("Enter key for PFADD: ");
+        step = "pfadd_key";
+        break;
+
+      case "58":
+        socket.write("Enter key for PFCOUNT: ");
+        step = "pfcount_key";
+        break;
+
+      case "59":
+        socket.write("Enter destination key for PFMERGE: ");
+        step = "pfmerge_destkey";
+        break;
+
+      case "60":
+        socket.write("Create Key for TS.CREATE: ");
+        step = "ts_create_key";
+        break;
+
+      case "61":
+        socket.write("Enter key for TS.ADD: ");
+        step = "ts_add_key";
+        break;
+
+      case "62":
+        socket.write("Enter key for TS.GET: ");
+        step = "ts_get";
+        break;
+
+      case "63":
+        socket.write("Enter key for TS.RANGE: ");
+        step = "ts_range";
+        break;
+
+      case "64":
+        socket.write("Enter key for TS.DOWNSAMPLE: ");
+        step = "ts_downsample";
+        break;
+
+      case "65":
+        socket.write("Enter key for TS.AGGREGATE: ");
+        step = "ts_aggregate";
+        break;
+
+      case "66":
         db.saveSnapshot();
         socket.write("+OK Snapshot saved\r\n");
         socket.write(displayMenu());
         break;
 
-      case "50":
-        this.clearStore();
-        this.clearSnapshot();
-        socket.write("Bye!\r\n");
-        socket.end();
+      case "67":
+        db.clearStore();
+        db.clearSnapshot();
+        process.exit(0);
         break;
 
       default:
