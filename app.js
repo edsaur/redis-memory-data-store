@@ -70,8 +70,12 @@ const displayMenu = () => {
 63. TS.RANGE (Time Series)
 64. TS.DOWNSAMPLE (Time Series)
 65. TS.AGGREGATE (Time Series)
-66. SAVE snapshot
-67. Exit
+66. EXPIRY (Set expiration time)
+67. PEXPIRE (Set expiration time in milliseconds)
+68. TTL (Get time to live)
+69. PTTL (Get time to live in milliseconds)
+70. SAVE snapshot
+71. Exit
 Enter your choice: `;
 };
 
@@ -1389,6 +1393,81 @@ const server = net.createServer((socket) => {
       return;
     }
 
+    // TTL commands
+    else if (step === "ttl_expiry") {
+      tempKey = input;
+      socket.write("Enter expiry time in seconds: ");
+      step = "ttl_expiry_time";
+      return;
+    } else if (step === "ttl_expiry_time") {
+      let expiryTime = parseInt(input);
+      if (isNaN(expiryTime) || expiryTime <= 0) {
+        socket.write("-ERR: Invalid expiry time\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      db.ttl.expire(tempKey, expiryTime);
+      socket.write(`+OK\r\n`);
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      return;
+    } else if (step === "pexpire") {
+      tempKey = input;
+      socket.write("Enter expiry time in milliseconds: ");
+      step = "pexpire_time";
+      return;
+    } else if (step === "pexpire_time") {
+      let expiryTime = parseInt(input);
+      if (isNaN(expiryTime) || expiryTime <= 0) {
+        socket.write("-ERR: Invalid expiry time\r\n");
+        socket.write(displayMenu());
+        step = null;
+        return;
+      }
+      db.ttl.pexpire(tempKey, expiryTime);
+      socket.write(`+OK\r\n`);
+      socket.write(displayMenu());
+      step = null;
+      tempKey = null;
+      return;
+    } else if (step === "ttl") {
+      let ttlValue = db.ttl.ttl(input);
+      if (ttlValue === -2) {
+        socket.write("-1 Key does not exist or has expired\r\n");
+      } else if (ttlValue === -1) {
+        socket.write("-1 No TTL set for key\r\n");
+      } else {
+        socket.write(`TTL for key "${input}": ${ttlValue} seconds\r\n`);
+      }
+      socket.write(displayMenu());
+      step = null;
+      return;
+    } else if (step === "pttl") {
+      let pttlValue = db.ttl.pttl(input);
+      if (pttlValue === -2) {
+        socket.write("-1 Key does not exist or has expired\r\n");
+      } else if (pttlValue === -1) {
+        socket.write("-1 No TTL set for key\r\n");
+      } else {
+        socket.write(`PTTL for key "${input}": ${pttlValue} milliseconds\r\n`);
+      }
+      socket.write(displayMenu());
+      step = null;
+      return;
+    } else if (step === "persist") {
+      let result = db.ttl.persist(input);
+      if (result === 0) {
+        socket.write("-ERR: Key does not exist or no TTL set\r\n");
+      } else {
+        socket.write("+OK Expiration removed\r\n");
+      }
+      socket.write(displayMenu());
+      step = null;
+      return;
+    }
+
     switch (input) {
       case "1":
         socket.write("Enter key for SET: ");
@@ -1711,12 +1790,25 @@ const server = net.createServer((socket) => {
         break;
 
       case "66":
+        socket.write("Enter key for TS.expire: ");
+        step = "ttl_expiry";
+        break;
+      case "67":
+        socket.write("Enter key for PEXPIRE: ");
+        step = "pexpire";
+        break;
+      case "68":
+        socket.write("Enter key for TTL: ");
+        step = "ttl";
+        break;
+      case "69":
+        socket.write("Enter key for PTTL");
+      case "70":
         db.saveSnapshot();
         socket.write("+OK Snapshot saved\r\n");
         socket.write(displayMenu());
         break;
-
-      case "67":
+      case "71":
         db.clearStore();
         db.clearSnapshot();
         process.exit(0);
