@@ -39,6 +39,7 @@ class StringStore {
       let value = Number(this.store.get(key));
       if (isNaN(value)) throw new Error("Value is not an integer");
       this.store.set(key, String(value + 1));
+      this.appendToAOF(`db.string.incr`, { key, value });
     }
     return this.store.get(key);
   }
@@ -51,6 +52,7 @@ class StringStore {
       if (isNaN(value))
         throw new Error("ERR value is not a number or out of range");
       this.store.set(key, String(value - 1));
+      this.appendToAOF(`db.string.decr`, { key, value });
     }
     return this.store.get(key);
   }
@@ -62,6 +64,7 @@ class StringStore {
       let value = Number(this.store.get(key));
       if (isNaN(value)) throw new Error("Value is not an integer");
       this.store.set(key, String(value + valToIncrement));
+      this.appendToAOF(`db.string.incrBy`, { key, value });
     }
 
     return this.store.get(key);
@@ -74,6 +77,7 @@ class StringStore {
       let value = Number(this.store.get(key));
       if (isNaN(value)) throw new Error("Value is not an integer");
       this.store.set(key, String(value - valToDecrement));
+      this.appendToAOF(`db.string.decrBy`, { key, value });
     }
 
     return this.store.get(key);
