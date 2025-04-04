@@ -74,8 +74,10 @@ const displayMenu = () => {
 67. PEXPIRE (Set expiration time in milliseconds)
 68. TTL (Get time to live)
 69. PTTL (Get time to live in milliseconds)
-70. SAVE snapshot
-71. Exit
+70. PERSIST (Remove expiration time)
+71. MULTI (Start transaction)
+72. SAVE snapshot
+73. Exit
 Enter your choice: `;
 };
 
@@ -111,9 +113,11 @@ const server = net.createServer((socket) => {
   let tempIndex = null;
   let tempPath = null;
   let tempFields = null;
+  let tempJsonValue = null;
   let tempValue = null;
   let tempType = null;
   let tempOverflow = null;
+  let clientId = null;
 
   socket.on("data", (data) => {
     const input = data.toString().trim();
@@ -1466,7 +1470,45 @@ const server = net.createServer((socket) => {
       socket.write(displayMenu());
       step = null;
       return;
-    }
+    } else if (step === "MULTI") {
+      db.transaction.multi(clientId);
+      socket.write(
+        "+OK: Transaction started. Queue commands using 'string.set', 'json.set', etc.\r\n"
+      );
+      socket.write("Send 'EXEC' to execute or 'DISCARD' to cancel.\r\n");
+      step = "QUEUE";
+      return;
+    } else if (step === "QUEUE") {
+      let command = input.trim();
+  
+      if (command.toUpperCase() === "EXEC") {
+          const results = db.transaction.exec(clientId);
+          socket.write(results + "\r\n");
+          step = null; // Reset state after execution
+          socket.write(displayMenu());
+          return;
+      } else if (command.toUpperCase() === "DISCARD") {
+          db.transaction.discard(clientId);
+          socket.write("+OK: Transaction discarded.\r\n");
+          step = null; // Reset state after discarding
+          return;
+      }
+  
+      // Ensure the command follows the correct format (e.g., string.set, json.set, etc.)
+      if (!command.match(/^(string|json|list|set|hash|zset)\.\w+\(.*\)$/)) {
+          socket.write("-ERR: Invalid command format. Use 'string.set', 'json.set', etc.\r\n");
+          return;
+      }
+  
+      // Queue command
+      db.transaction.queueCommand(clientId, command);
+      socket.write("+QUEUED\r\n");
+  
+      // **THIS LINE RE-PROMPTS THE USER TO INPUT MORE COMMANDS**
+      socket.write("Enter another command or type 'EXEC' to execute all.\r\n");
+      return
+  }
+  
 
     switch (input) {
       case "1":
@@ -1810,11 +1852,15 @@ const server = net.createServer((socket) => {
         step = "persist";
         break;
       case "71":
+        socket.write("Enter client ID for MULTI: ");
+        step = "MULTI";
+        break;
+      case "72":
         db.saveSnapshot();
         socket.write("+OK Snapshot saved\r\n");
         socket.write(displayMenu());
         break;
-      case "72":
+      case "73":
         db.clearStore();
         db.clearSnapshot();
         process.exit(0);
