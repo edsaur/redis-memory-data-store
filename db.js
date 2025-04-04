@@ -14,12 +14,14 @@ import HyperLogLogStore from "./data-type/hyperloglogStore.js";
 import TimeSeriesStore from "./data-type/timeSeriesStore.js";
 import TTLStore from "./TTLStore.js";
 import TransactionStore from "./TransactionsStore.js";
+import PubSub from "./pubsub.js";
 
 class RedisLikeDB {
   constructor(aofFile = "data.aof", snapshotFile = "data.snapshot.json") {
     this.store = new InMemoryStore();
     this.ttl = new TTLStore(this.store, this.appendToAOF.bind(this));
     this.transaction = new TransactionStore(this.store, this.appendToAOF.bind(this));
+    this.pubsub = new PubSub();
     this.aofFile = aofFile;
     this.snapshotFile = snapshotFile;
 
@@ -139,6 +141,16 @@ class RedisLikeDB {
   clearSnapshot() {
     fs.writeFileSync(this.snapshotFile, "{}");
     console.log("Snapshot file cleared");
+  }
+
+  publish(channel, message) {
+    this.pubsub.publish(channel, message);
+    this.appendToAOF("PUBLISH", { channel, message });
+  }
+
+  subscribe(socket, channel) {
+    this.pubsub.subscribe(socket, channel);
+    this.appendToAOF("SUBSCRIBE", { socket, channel });
   }
 }
 

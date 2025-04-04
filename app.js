@@ -74,8 +74,13 @@ const displayMenu = () => {
 67. PEXPIRE (Set expiration time in milliseconds)
 68. TTL (Get time to live)
 69. PTTL (Get time to live in milliseconds)
-70. SAVE snapshot
-71. Exit
+70. PERSIST (Remove expiration time)
+71. MULTI (Start transaction)
+72. SUBSCRIBE (Pub/Sub)
+73. PUBLISH (Pub/Sub)
+74. UNSUBSCRIBE (Pub/Sub)
+75. Save snapshot
+76. Quit
 Enter your choice: `;
 };
 
@@ -111,9 +116,13 @@ const server = net.createServer((socket) => {
   let tempIndex = null;
   let tempPath = null;
   let tempFields = null;
+  let tempJsonValue = null;
   let tempValue = null;
   let tempType = null;
   let tempOverflow = null;
+  let clientId = null;
+  let channel = null;
+  let message = null;
 
   socket.on("data", (data) => {
     const input = data.toString().trim();
@@ -1466,6 +1475,70 @@ const server = net.createServer((socket) => {
       socket.write(displayMenu());
       step = null;
       return;
+    } else if (step === "MULTI") {
+      db.transaction.multi(clientId);
+      socket.write(
+        "+OK: Transaction started. Queue commands using 'string.set', 'json.set', etc.\r\n"
+      );
+      socket.write("Send 'EXEC' to execute or 'DISCARD' to cancel.\r\n");
+      step = "QUEUE";
+      return;
+    } else if (step === "QUEUE") {
+      let command = input.trim();
+
+      if (command.toUpperCase() === "EXEC") {
+        const results = db.transaction.exec(clientId);
+        socket.write(results + "\r\n");
+        step = null; // Reset state after execution
+        socket.write(displayMenu());
+        return;
+      } else if (command.toUpperCase() === "DISCARD") {
+        db.transaction.discard(clientId);
+        socket.write("+OK: Transaction discarded.\r\n");
+        step = null; // Reset state after discarding
+        return;
+      }
+
+      // Ensure the command follows the correct format (e.g., string.set, json.set, etc.)
+      if (!command.match(/^(string|json|list|set|hash|zset)\.\w+\(.*\)$/)) {
+        socket.write(
+          "-ERR: Invalid command format. Use 'string.set', 'json.set', etc.\r\n"
+        );
+        return;
+      }
+
+      // Queue command
+      db.transaction.queueCommand(clientId, command);
+      socket.write("+QUEUED\r\n");
+
+      // **THIS LINE RE-PROMPTS THE USER TO INPUT MORE COMMANDS**
+      socket.write("Enter another command or type 'EXEC' to execute all.\r\n");
+      return;
+    } 
+    
+    else if (step === "subscribe") {
+      channel = input.trim();
+      db.subscribe(socket, channel);
+      socket.write(`+Subscribed to channel '${channel}'\r\n`);
+      socket.write(displayMenu());
+      step = null;
+      return;
+    } else if (step === "publish") {
+      channel = input.trim();
+      socket.write("Enter message: ");
+      step = "publish_message";
+      return;
+    } else if (step === "publish_message") {
+      message = input.trim();
+      db.pubsub.publish(channel, message);
+      socket.write(`+Message published to channel '${channel}'\r\n`);
+    } else if(step === "unsubscribe") {
+      channel = input.trim();
+      db.pubsub.unsubscribe(socket, channel);
+      socket.write(`+Unsubscribed from channel '${channel}'\r\n`);
+      socket.write(displayMenu());
+      step = null;
+      return;
     }
 
     switch (input) {
@@ -1803,12 +1876,34 @@ const server = net.createServer((socket) => {
         break;
       case "69":
         socket.write("Enter key for PTTL");
+        step = "pttl";
+        break;
       case "70":
+        socket.write("Enter key for PERSIST: ");
+        step = "persist";
+        break;
+      case "71":
+        socket.write("Enter client ID for MULTI: ");
+        step = "MULTI";
+        break;
+      case "72": 
+        socket.write("Enter the channel to subscribe to: ");
+        step = "subscribe";
+        break;
+      case "73":
+        socket.write("Enter the channel to publish to: ");
+        step = "publish";
+        break;
+      case "74":
+        socket.write("Enter the channel to unsubscribe from: ");
+        step = "unsubscribe";
+        break;
+      case "75":
         db.saveSnapshot();
         socket.write("+OK Snapshot saved\r\n");
         socket.write(displayMenu());
         break;
-      case "71":
+      case "76":
         db.clearStore();
         db.clearSnapshot();
         process.exit(0);
