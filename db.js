@@ -15,12 +15,16 @@ import TimeSeriesStore from "./data-type/timeSeriesStore.js";
 import TTLStore from "./TTLStore.js";
 import TransactionStore from "./TransactionsStore.js";
 import PubSub from "./pubsub.js";
+import { commandHandlers } from "./handlers/commandHandlers.js";
 
 class RedisLikeDB {
   constructor(aofFile = "data.aof", snapshotFile = "data.snapshot.json") {
     this.store = new InMemoryStore();
     this.ttl = new TTLStore(this.store, this.appendToAOF.bind(this));
-    this.transaction = new TransactionStore(this.store, this.appendToAOF.bind(this));
+    this.transaction = new TransactionStore(
+      this.store,
+      this.appendToAOF.bind(this)
+    );
     this.pubsub = new PubSub();
     this.aofFile = aofFile;
     this.snapshotFile = snapshotFile;
@@ -38,17 +42,18 @@ class RedisLikeDB {
     this.bitfield = new BitfieldStore(this.store, this.appendToAOF.bind(this));
     this.hll = new HyperLogLogStore(this.store, this.appendToAOF.bind(this));
     this.ts = new TimeSeriesStore(this.store, this.appendToAOF.bind(this));
-    
+
     // Clear the store, AOF, and snapshot files on startup
     // this.clearStore();
     // this.clearSnapshot();
 
-    //  Load snapshot file
-    this.loadSnapshot();
-    this.replayAOF();
-
     // Start TTL cleanup process every second
     setInterval(() => this.ttl.cleanup(), 1000);
+  }
+
+  init() {
+    this.loadSnapshot();  // Load snapshot first to restore the state
+    this.replayAOF();     // Replay the AOF file to apply subsequent operations
   }
 
   appendToAOF(command, data) {
@@ -96,7 +101,9 @@ class RedisLikeDB {
 
     for (const command of commands) {
       try {
-        JSON.parse(command);
+        const { command: cmd, data } = JSON.parse(command);
+        // Execute the command, assuming a `db.executeCommand` method that handles various commands
+        db.executeCommand(cmd, data); // Make sure you implement the `executeCommand` method
       } catch (error) {
         console.error("❌ Error parsing AOF command:", error);
       }
@@ -105,6 +112,19 @@ class RedisLikeDB {
     console.log("✅ AOF replayed successfully");
   }
 
+  executeCommand(cmd, data) {
+    const handler = commandHandlers[cmd];
+    if (handler) {
+      try {
+        handler.call(this, data); // Call the handler with 'this' context
+      } catch (error) {
+        console.error("Error executing AOF command:", error);
+      }
+    } else {
+      console.warn(`Unknown AOF command: ${cmd}`);
+    }
+  }
+  
   //   Save snapshot file
   saveSnapshot() {
     const snapshotData = {};
@@ -155,4 +175,5 @@ class RedisLikeDB {
 }
 
 const db = new RedisLikeDB();
+db.init(); // Initialize the database by loading snapshot and replaying AOF
 export default db;
