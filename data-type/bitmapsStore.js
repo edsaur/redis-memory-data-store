@@ -18,7 +18,7 @@ class BitmapsStore {
 
     binaryArr[offset] = value;
     this.store.set(key, binaryArr.join(""));
-    this.appendToAOF("db.bitmaps.setBitmap", { key, offset, value });
+    this.appendToAOF("db.bitmaps.setBit", { key, offset, value });
 
     return value;
   }
