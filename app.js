@@ -936,12 +936,19 @@ const server = net.createServer((socket) => {
         }
         break;
       // SAVE
-
       case "SAVE":
         db.saveSnapshot(); // Save the current state to a snapshot file
         response = "+OK\r\n";
         break;
-
+      case "DEL":
+        if (args.length < 1) {
+          response = "-ERROR: DEL requires at least one key\r\n";
+        } else {
+          const keys = args;
+          response = "+OK\r\n";
+          db.store.remove(keys);
+        }
+      break;
       case "CLEAR":
         db.clearStore(); // Clear the in-memory store
         db.clearAOF();
