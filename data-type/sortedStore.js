@@ -23,6 +23,12 @@ export class SkipList {
   }
 
   insert(score, value) {
+    const existing = this.find(value);
+    if (existing) {
+      // Optional: Update the score or skip
+      this.remove(value);
+    }
+
     let update = Array(this.maxLevel).fill(null);
     let curr = this.head;
 
@@ -124,12 +130,13 @@ class SortedStore {
   }
 
   zadd(key, score, value) {
-    if (!this.store.has(key)) {
-      this.store.set(key, new SkipList()); // Create a new skip list if it doesn't exist
+    if (!this.store.has(key) || !(this.store.get(key) instanceof SkipList)) {
+      this.store.set(key, new SkipList());
     }
-    this.store.get(key).insert(score, value); // Insert the value into the skip list
-    this.appendToAOF("db.sorted.zadd", { key, score, value }); // Append to AOF
-    return 1; // Return 1 to indicate success
+
+    this.store.get(key).insert(score, value);
+    this.appendToAOF("db.zset.zadd", { key, score, value });
+    return 1;
   }
 
   zrange(key, start, end) {
@@ -141,12 +148,28 @@ class SortedStore {
   }
 
   zrank(key, value) {
-    if (!this.store.has(key)) return null; // Return null if the key doesn't exist
-    return this.store.get(key).rank(value); // Get the rank of the value
+    if (!this.store.has(key)) return null; // Key does not exist
+
+    const skipList = this.store.get(key); // Get the SkipList from the map
+    let rank = 0;
+    let curr = skipList.head.next[0]; // Start at the first element in the SkipList
+
+    // Traverse the SkipList and rank the elements
+    while (curr) {
+      if (curr.value === value) {
+        return rank; // Return the rank if the value is found
+      }
+      rank++; // Increment the rank as you go through the list
+      curr = curr.next[0]; // Move to the next node at level 0
+    }
+
+    return null; // Return null if the value was not found
   }
 
   zrem(key, value) {
     if (!this.store.has(key)) return false; // Return false if the key doesn't exist
+
+    this.appendToAOF("db.zset.zrem", { key, value }); // Append to AOF
     return this.store.get(key).remove(value); // Remove the value from the skip list
   }
 
