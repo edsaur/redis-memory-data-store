@@ -18,12 +18,28 @@ class StreamStore {
     return `${timestamp}-${sequence}`;
   }
 
-  xadd(key, ...fieldValues) {
+  xadd(key, idOrField, ...maybeFields) {
     if (!this.store.has(key)) {
       this.store.set(key, []);
     }
 
-    // Ensure fieldValues is in correct format
+    let entryID, fieldValues;
+
+    const isReplayID =
+      typeof idOrField === "string" && /^\d+-\d+$/.test(idOrField);
+
+    if (isReplayID) {
+      // AOF replay mode
+      entryID = idOrField;
+      fieldValues = maybeFields;
+    } else {
+      // Normal CLI mode
+      fieldValues = [idOrField, ...maybeFields];
+      const timestamp = Date.now();
+      const sequence = this.store.get(key).length + 1;
+      entryID = `${timestamp}-${sequence}`;
+    }
+
     if (fieldValues.length % 2 !== 0) {
       throw new Error("Field-values must be in key-value pairs.");
     }
@@ -33,22 +49,39 @@ class StreamStore {
       formattedFields.push([fieldValues[i], fieldValues[i + 1]]);
     }
 
-    const timestamp = Date.now();
-    const sequence = this.store.get(key).length + 1;
-    const entryID = `${timestamp}-${sequence}`;
-
     const entry = { id: entryID, data: Object.fromEntries(formattedFields) };
 
-    this.store.get(key).push(entry);
-    this.appendToAOF("db.stream.xadd", { key, entry });
+    const stream = this.store.get(key);
+    if (!Array.isArray(stream))
+      throw new Error("Stream key corrupted, expected array.");
+    stream.push(entry);
+
+    // Only append to AOF if this is not from replay
+    if (!isReplayID) {
+      this.appendToAOF("db.stream.xadd", {
+        key,
+        id: entryID,
+        fields: formattedFields,
+      });
+    }
 
     return entryID;
   }
 
-  xread(count, stream) {
+  xread({ count, stream, startId = "0" }) {
     if (!this.store.has(stream)) return [];
+
     const entries = this.store.get(stream);
-    return entries.slice(-count);
+    const result = [];
+
+    for (const entry of entries) {
+      if (entry.id > startId) {
+        result.push(entry);
+        if (result.length >= count) break;
+      }
+    }
+
+    return result;
   }
 
   xrange(stream, startID, endID) {
@@ -71,20 +104,40 @@ class StreamStore {
       this.consumerGroups.set(stream, new Map());
     }
     this.consumerGroups.get(stream).set(group, []);
+    this.appendToAOF("db.stream.xgroupCreate", { stream, group });
+    return true;
   }
 
   xreadgroup(stream, group, count) {
-    if (
-      !this.consumerGroups.has(stream) ||
-      !this.consumerGroups.get(stream).has(group)
-    ) {
-      throw new Error("Consumer group does not exist.");
+    if (!this.store.has(stream)) return [];
+  
+    const streamData = this.store.get(stream);
+  
+    // Ensure the group exists
+    if (!this.consumerGroups.has(stream)) {
+      this.consumerGroups.set(stream, new Map());
     }
-
-    const messages = this.store.get(stream).slice(-count);
-    this.consumerGroups.get(stream).set(group, messages);
-    return messages;
+  
+    const groupMap = this.consumerGroups.get(stream);
+    if (!groupMap.has(group)) {
+      groupMap.set(group, []);
+    }
+  
+    const groupPendingMessages = groupMap.get(group);
+  
+    // Get `count` number of **new messages** for this group
+    const unacked = streamData.filter(
+      (entry) => !groupPendingMessages.some((m) => m.id === entry.id)
+    );
+  
+    const messagesToDeliver = unacked.slice(0, count);
+  
+    // ✅ Add to pending list
+    groupPendingMessages.push(...messagesToDeliver);
+  
+    return messagesToDeliver;
   }
+  
 
   xack(stream, group, id) {
     if (
@@ -93,7 +146,7 @@ class StreamStore {
     ) {
       return false;
     }
-
+  
     const groupMessages = this.consumerGroups.get(stream).get(group);
     const index = groupMessages.findIndex((msg) => msg.id === id);
     if (index !== -1) {
@@ -102,6 +155,7 @@ class StreamStore {
     }
     return false;
   }
+  
 }
 
 export default StreamStore;
