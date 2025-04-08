@@ -7,10 +7,10 @@ class TimeSeriesStore {
   // TS.CREATE - Create a new time series
   create(key) {
     if (this.store.has(key)) {
-      throw new Error(`Time series ${key} already exists`);
+      return `Time series ${key} already exists`;
     }
     this.store.set(key, []);
-    this.appendToAOF(`TS.CREATE ${key}`);
+    this.appendToAOF(`db.ts.create`, {key});
   }
 
   // TS.ADD - Add a data point to the time series
@@ -19,14 +19,16 @@ class TimeSeriesStore {
       throw new Error(`Time series ${key} does not exist`);
     }
     const timeSeries = this.store.get(key);
-    timeSeries.push({ timestamp, value });
-    this.appendToAOF(`TS.ADD ${key} ${timestamp} ${value}`);
+    timeSeries.push({ timestamp, value }); // Append new data point
+
+    this.appendToAOF(`db.ts.add`, {key, timestamp, value});
+ 
   }
 
   // TS.RANGE - Get data points in the given time range
   range(key, startTime, endTime) {
     if (!this.store.has(key)) {
-      throw new Error(`Time series ${key} does not exist`);
+      return `Time series ${key} does not exist`;
     }
     const timeSeries = this.store.get(key);
     return timeSeries.filter(
@@ -37,48 +39,42 @@ class TimeSeriesStore {
   // TS.GET - Get the most recent data point
   get(key) {
     if (!this.store.has(key)) {
-      throw new Error(`Time series ${key} does not exist`);
+      return `Time series ${key} does not exist`;
     }
     const timeSeries = this.store.get(key);
     return timeSeries.length > 0 ? timeSeries[timeSeries.length - 1] : null;
   }
 
-  // Downsampling: Aggregate values over a specified interval (e.g., average)
+  // TS.DOWNSAMPLE - Downsample the time series to a specified interval
   downsample(key, interval) {
     if (!this.store.has(key)) {
       throw new Error(`Time series ${key} does not exist`);
     }
     const timeSeries = this.store.get(key);
-
-    let aggregated = [];
-    let currentIntervalStart = timeSeries[0].timestamp;
-    let sum = 0;
-    let count = 0;
-
+    const grouped = new Map();
+  
     for (const { timestamp, value } of timeSeries) {
-      if (timestamp >= currentIntervalStart + interval) {
-        aggregated.push({
-          timestamp: currentIntervalStart + interval,
-          value: sum / count, // Calculate average for the interval
-        });
-        currentIntervalStart += interval;
-        sum = 0;
-        count = 0;
+      const bucket = Math.floor(timestamp / interval) * interval;
+  
+      if (!grouped.has(bucket)) {
+        grouped.set(bucket, { sum: 0, count: 0 });
       }
-      sum += value;
-      count += 1;
+  
+      const entry = grouped.get(bucket);
+      entry.sum += value;
+      entry.count += 1;
     }
-
-    // Add last interval
-    if (count > 0) {
-      aggregated.push({
-        timestamp: currentIntervalStart + interval,
-        value: sum / count,
-      });
+  
+    // Now aggregate each bucket
+    const result = [];
+    for (const [timestamp, { sum, count }] of grouped.entries()) {
+      result.push({ timestamp, value: sum / count });
     }
-
-    return aggregated;
+  
+    // Sort by timestamp
+    return result.sort((a, b) => a.timestamp - b.timestamp);
   }
+  
 
   // Aggregation: Sum over a specific interval (e.g., sum of values in a range)
   aggregate(key, startTime, endTime, aggregationType = "sum") {
@@ -105,7 +101,7 @@ class TimeSeriesStore {
           ? dataInRange[dataInRange.length - 1].value
           : null; // Last data point
     } else {
-      throw new Error(`Unsupported aggregation type: ${aggregationType}`);
+      return `Unsupported aggregation type: ${aggregationType}`;
     }
 
     return result + "\u00B0C";
