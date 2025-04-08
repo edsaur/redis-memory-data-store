@@ -89,16 +89,7 @@ class BitfieldStore {
     const newValue = current + increment;
     this.setBitfield(key, type, offset, newValue, overflowMode);
 
-    // Append to AOF log
-    this.appendToAOF("db.bitfield.incrByBitfield", {
-      key,
-      type,
-      offset,
-      value,
-      overflowMode,
-    });
-
-    return this.getBitfield(key, type, offset);
+    return newValue;
   }
 
   executeBitfieldOperations(key, operations, overflowMode = "WRAP") {
