@@ -38,7 +38,7 @@ class JsonStore {
     if (!this.store.has(key)) return false; // Return false instead of throwing an error
 
     if (path === "$") {
-      this.store.delete(key); // Delete the entire object
+      this.store.remove(key); // Delete the entire object
       this.appendToAOF("db.json.del", { key });
       return true;
     }
