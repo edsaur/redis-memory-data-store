@@ -15,7 +15,7 @@ import TimeSeriesStore from "./data-type/timeSeriesStore.js";
 import TTLStore from "./TTLStore.js";
 import TransactionStore from "./TransactionsStore.js";
 import PubSub from "./pubsub.js";
-import { commandHandlers } from "./handlers/commandHandlers.js";
+import { aofCommandHandlers } from "./handlers/aofCommandHandlers.js";
 
 class RedisLikeDB {
   constructor(aofFile = "data.aof", snapshotFile = "data.snapshot.json") {
@@ -104,6 +104,7 @@ class RedisLikeDB {
         const { command: cmd, data } = JSON.parse(command);
         // Execute the command, assuming a `db.executeCommand` method that handles various commands
         db.executeCommand(cmd, data); // Make sure you implement the `executeCommand` method
+        db.saveSnapshot();
       } catch (error) {
         console.error("❌ Error parsing AOF command:", error);
       }
@@ -113,7 +114,7 @@ class RedisLikeDB {
   }
 
   executeCommand(cmd, data) {
-    const handler = commandHandlers[cmd];
+    const handler = aofCommandHandlers[cmd];
     if (handler) {
       try {
         handler.call(this, data); // Call the handler with 'this' context
@@ -165,12 +166,14 @@ class RedisLikeDB {
 
   publish(channel, message) {
     this.pubsub.publish(channel, message);
-    this.appendToAOF("PUBLISH", { channel, message });
   }
 
   subscribe(socket, channel) {
     this.pubsub.subscribe(socket, channel);
-    this.appendToAOF("SUBSCRIBE", { socket, channel });
+  }
+
+  unsubscribe(socket, channel) {
+    this.pubsub.unsubscribe(socket, channel);
   }
 }
 
