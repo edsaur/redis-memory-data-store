@@ -1,4 +1,5 @@
-import db from "./db.js"; 
+import db from "./db.js";
+import { transactionCommandHandlers } from "./handlers/transactionCommandHandlers.js";
 
 class TransactionStore {
   constructor(store, appendToAOF) {
@@ -35,9 +36,17 @@ class TransactionStore {
 
     for (const command of commands) {
       try {
-        let result = eval(`db.${command}`); // Execute the command
-        responses.push(result);
-        this.appendToAOF(`db.execTransaction`, { command });
+        const parts = command.split(" ");
+        const cmd = parts[0].toUpperCase(); // Command name
+        const args = parts.slice(1); // Arguments
+
+        // Dynamically execute the command using the registry
+        if (transactionCommandHandlers[cmd]) {
+          const result = transactionCommandHandlers[cmd](db, args);
+          responses.push(result);
+        } else {
+          responses.push(`-ERR: Unsupported command '${cmd}'`);
+        }
       } catch (error) {
         console.log(error);
         responses.push("-ERR: Failed to execute command");
