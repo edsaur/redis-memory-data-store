@@ -7,7 +7,7 @@ class HashStore {
     // HSET: Set field-value pair in a hash
     hset(key, field, value) {
         if (typeof key !== 'string' || typeof field !== 'string') {
-            throw new Error('Key and field must be strings.');
+            return '-ERR: Key and field must be strings.';
         }
         if (!this.store.has(key)) {
             this.store.set(key, {});
@@ -22,7 +22,7 @@ class HashStore {
     // HGET: Get value of a field in a hash
     hget(key, field) {
         if (typeof key !== 'string' || typeof field !== 'string') {
-            throw new Error('Key and field must be strings.');
+            return '-ERR: Key and field must be strings.';
         }
         return this.store.has(key) ? this.store.get(key)[field] : null;
     }
@@ -30,7 +30,7 @@ class HashStore {
     // HMSET: Set multiple field-value pairs in a hash
     hmset(key, obj){
         if (typeof key !== 'string' || typeof obj !== 'object') {
-            throw new Error('Key must be a string, and value must be an object.');
+            return '-ERR: Key must be a string, and value must be an object.';
         }
         if(!this.store.has(key)) this.store.set(key, {});
         const hash = this.store.get(key);
@@ -42,7 +42,7 @@ class HashStore {
     // HGETALL: Get all field-value pairs in a hash
     hgetall(key){
         if (typeof key !== 'string') {
-            throw new Error('Key must be a string.');
+            return '-ERR: Key must be a string.';
         }
         return this.store.has(key) ? this.store.get(key) : {};
     }
@@ -50,7 +50,7 @@ class HashStore {
     // Hdel: Delete one or more fields in a hash
     hdel(key, ...fields){
         if (typeof key !== 'string' || !fields.every(f => typeof f === 'string')) {
-            throw new Error('Key and fields must be strings.');
+            return '-ERR: Key and fields must be strings.';
         }
         if(!this.store.has(key)) return 0;
         const hash = this.store.get(key);
@@ -68,7 +68,7 @@ class HashStore {
     // HEXISTS: Check if a field exists in a hash
     hexists(key, field){
         if (typeof key !== 'string' || typeof field !== 'string') {
-            throw new Error('Key and field must be strings.');
+            return '-ERR: Key and field must be strings.';
         }
         return this.store.has(key) && this.store.get(key).hasOwnProperty(field) ? 1 : 0;
     }
@@ -76,7 +76,7 @@ class HashStore {
     //HLEN: Get the number of fields in a hash
     hlen(key) {
         if (typeof key !== 'string') {
-            throw new Error('Key must be a string.');
+            return '-ERR: Key must be a string.';
         }
         const hash = this.store.get(key);
         return hash ? Object.keys(hash).length : 0;

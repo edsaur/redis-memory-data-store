@@ -17,11 +17,10 @@ class BitfieldStore {
     let minVal = signed ? -(1 << (bitSize - 1)) : 0;
 
     if (overflowMode === "FAIL" && (value > maxVal || value < minVal)) {
-      throw new Error(
-        `Value ${value} out of range for ${bitSize}-bit ${
+      return `Value ${value} out of range for ${bitSize}-bit ${
           signed ? "signed" : "unsigned"
         } integer`
-      );
+      ;
     }
 
     if (overflowMode === "SAT") {

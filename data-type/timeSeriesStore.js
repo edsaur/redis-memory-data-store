@@ -16,7 +16,7 @@ class TimeSeriesStore {
   // TS.ADD - Add a data point to the time series
   add(key, timestamp, value) {
     if (!this.store.has(key)) {
-      throw new Error(`Time series ${key} does not exist`);
+      return `Time series ${key} does not exist`;
     }
     const timeSeries = this.store.get(key);
     timeSeries.push({ timestamp, value }); // Append new data point
@@ -48,7 +48,7 @@ class TimeSeriesStore {
   // TS.DOWNSAMPLE - Downsample the time series to a specified interval
   downsample(key, interval) {
     if (!this.store.has(key)) {
-      throw new Error(`Time series ${key} does not exist`);
+      return `Time series ${key} does not exist`;
     }
     const timeSeries = this.store.get(key);
     const grouped = new Map();
