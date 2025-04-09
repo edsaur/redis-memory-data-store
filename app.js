@@ -188,8 +188,12 @@ const server = net.createServer((socket) => {
         if (args.length < 1) {
           response = "-ERROR: JSON.DEL requires at least one key\r\n";
         } else {
-          db.json.del(args[0]);
-          response = "+OK\r\n";
+          try {
+            db.json.del(args[0]);
+            response = "+OK\r\n";
+          } catch (error) {
+            response = `${error.message}\r\n`;
+          }
         }
         break;
 
@@ -200,9 +204,14 @@ const server = net.createServer((socket) => {
         } else {
           const key = args[0];
           const path = args[1];
-          const value = args.slice(2).join(" ");
-          db.json.arrAppend(key, path, value);
-          response = "+OK\r\n";
+
+          try {
+            const value = args.slice(2).join(" ");
+            db.json.arrAppend(key, path, value);
+            response = "+OK\r\n";
+          } catch (error) {
+            response = `${error.message}\r\n`;
+          }
         }
         break;
 
@@ -288,8 +297,14 @@ const server = net.createServer((socket) => {
         } else {
           const key = args[0];
           const values = args.slice(1);
-          db.set.sadd(key, ...values);
-          response = `:[${[...db.store.get(key)].join(" ")}]\r\n`;
+
+          try {
+            db.set.sadd(key, ...values); // Attempt to add values to the set
+            response = `:[${[...db.store.get(key)].join(" ")}]\r\n`; // Return the updated set
+          } catch (error) {
+            // Handle errors, such as TypeErrors or unexpected issues
+            response = `-ERROR: ${error.message}\r\n`;
+          }
         }
         break;
 
@@ -363,8 +378,12 @@ const server = net.createServer((socket) => {
           const key = args[0];
           const field = args[1];
           const value = args[2];
-          db.hash.hset(key, field, value);
-          response = "+OK\r\n";
+          try {
+            db.hash.hset(key, field, value);
+            response = "+OK\r\n";
+          } catch (error) {
+            response = `${error.message}\r\n`;
+          }
         }
         break;
 
@@ -374,8 +393,12 @@ const server = net.createServer((socket) => {
         } else {
           const key = args[0];
           const field = args[1];
-          const value = db.hash.hget(key, field);
-          response = value !== null ? `+${value}\r\n` : "$-1\r\n"; // Return (nil) if key not found
+          try {
+            const value = db.hash.hget(key, field);
+            response = value !== null ? `+${value}\r\n` : "$-1\r\n"; // Return (nil) if key not found
+          } catch (error) {
+            response = `${error.message}\r\n`;
+          }
         }
         break;
 
@@ -394,8 +417,12 @@ const server = net.createServer((socket) => {
             obj[field] = value;
           }
 
-          db.hash.hmset(key, obj);
-          response = "+OK\r\n";
+          try {
+            db.hash.hmset(key, obj);
+            response = "+OK\r\n";
+          } catch (error) {
+            response = `${error.message}\r\n`;
+          }
         }
         break;
 
@@ -404,9 +431,14 @@ const server = net.createServer((socket) => {
           response = "-ERROR: HGETALL requires a key\r\n";
         } else {
           const key = args[0];
-          const hash = db.hash.hgetall(key);
 
-          response = `+${JSON.stringify(hash)}\r\n`;
+          try {
+            const hash = db.hash.hgetall(key);
+
+            response = `+${JSON.stringify(hash)}\r\n`;
+          } catch (error) {
+            response = `${error.message}\r\n`;
+          }
         }
         break;
 
@@ -416,8 +448,12 @@ const server = net.createServer((socket) => {
         } else {
           const key = args[0];
           const fields = args.slice(1);
-          const count = db.hash.hdel(key, ...fields);
-          response = `+${count}\r\n`;
+          try {
+            const count = db.hash.hdel(key, ...fields);
+            response = `+${count}\r\n`;
+          } catch (error) {
+            response = `${error.message}\r\n`;
+          }
         }
         break;
 
@@ -427,8 +463,12 @@ const server = net.createServer((socket) => {
         } else {
           const key = args[0];
           const field = args[1];
-          const exists = db.hash.hexists(key, field);
-          response = exists ? "+1\r\n" : "+0\r\n";
+          try {
+            const exists = db.hash.hexists(key, field);
+            response = exists ? "+1\r\n" : "+0\r\n";
+          } catch (error) {
+            response = `${error.message}\r\n`;
+          }
         }
         break;
 
@@ -437,8 +477,12 @@ const server = net.createServer((socket) => {
           response = "-ERROR: HLEN requires a key\r\n";
         } else {
           const key = args[0];
-          const length = db.hash.hlen(key);
-          response = `+${length}\r\n`;
+          try {
+            const length = db.hash.hlen(key);
+            response = `+${length}\r\n`;
+          } catch {
+            response = `${error.message}\r\n`;
+          }
         }
         break;
 
@@ -510,8 +554,14 @@ const server = net.createServer((socket) => {
         } else {
           const key = args[0];
           const fieldValues = args.slice(1);
-          const id = db.stream.xadd(key, ...fieldValues);
-          response = `+${id}\r\n`;
+          try {
+            // Attempt to add the entry to the stream
+            const id = db.stream.xadd(key, ...fieldValues);
+            response = `+${id}\r\n`;
+          } catch (error) {
+            // Handle errors, such as invalid field-value pairs or corrupted stream
+            response = `-ERROR: ${error.message}\r\n`;
+          }
         }
         break;
 
@@ -556,8 +606,13 @@ const server = net.createServer((socket) => {
         } else {
           const key = args[0];
           const group = args[1];
-          db.stream.xgroupCreate(key, group);
-          response = "+OK\r\n";
+          try {
+            db.stream.xgroupCreate(key, group); // Attempt to create the consumer group
+            response = "+OK\r\n";
+          } catch (error) {
+            // Handle errors, such as stream not existing
+            response = `${error.message}\r\n`;
+          }
         }
         break;
 
@@ -779,8 +834,12 @@ const server = net.createServer((socket) => {
           response = "-ERROR: TS.CREATE requires a key\r\n";
         } else {
           const key = args[0];
-          db.ts.create(key);
-          response = "+OK\r\n";
+          try {
+            db.ts.create(key);
+            response = "+OK\r\n";
+          } catch (error) {
+            response = `${error.message}\r\n`;
+          }
         }
         break;
       case "TS.ADD":
@@ -788,17 +847,16 @@ const server = net.createServer((socket) => {
           response = "-ERROR: TS.ADD requires a key, timestamp, and value\r\n";
         } else {
           const key = args[0];
-          if (!db.store.has(key)) {
-            response = `-ERROR: TS.ADD key ${key} does not exist\r\n`;
-            break;
-          } else {
-            const timestamp = Number(args[1]);
-            const value = Number(args[2]);
+          const timestamp = Number(args[1]);
+          const value = Number(args[2]);
+          try {
             db.ts.add(key, timestamp, value);
             response = "+OK\r\n";
-            break;
+          } catch (error) {
+            response = `${error.message}\r\n`;
           }
         }
+        break;
       case "TS.RANGE":
         if (args.length < 3) {
           response =
@@ -807,8 +865,12 @@ const server = net.createServer((socket) => {
           const key = args[0];
           const startTime = Number(args[1]);
           const endTime = Number(args[2]);
-          const values = db.ts.range(key, startTime, endTime);
-          response = `+${JSON.stringify(values)}\r\n`;
+          try {
+            const values = db.ts.range(key, startTime, endTime);
+            response = `+${JSON.stringify(values)}\r\n`;
+          } catch (error) {
+            response = `${error.message}\r\n`;
+          }
         }
         break;
       case "TS.GET":
@@ -831,7 +893,7 @@ const server = net.createServer((socket) => {
             const value = db.ts.downsample(key, interval);
             response = `+${JSON.stringify(value)}\r\n`;
           } catch (error) {
-            response = `-ERROR: ${error.message}\r\n`;
+            response = `${error.message}\r\n`;
           }
         }
         break;
@@ -845,8 +907,12 @@ const server = net.createServer((socket) => {
           const startTime = Number(args[1]);
           const endTime = Number(args[2]);
           const aggType = args[3];
-          const values = db.ts.aggregate(key, startTime, endTime, aggType);
-          response = `+${values}\r\n`;
+          try {
+            const values = db.ts.aggregate(key, startTime, endTime, aggType);
+            response = `+${values}\r\n`;
+          } catch (error) {
+            response = `${error.message}\r\n`;
+          }
         }
         break;
 
@@ -857,8 +923,8 @@ const server = net.createServer((socket) => {
         } else {
           const key = args[0];
           const timeout = Number(args[1]);
-          db.ttl.expire(key, timeout);
-          response = "+OK\r\n";
+          const expire = db.ttl.expire(key, timeout);
+          response = `${expire}\r\n`;
         }
         break;
       case "PEXPIRE":
@@ -867,8 +933,8 @@ const server = net.createServer((socket) => {
         } else {
           const key = args[0];
           const timeout = Number(args[1]);
-          db.ttl.pexpire(key, timeout);
-          response = "+OK\r\n";
+          const pexpire = db.ttl.pexpire(key, timeout);
+          response = `${pexpire}\r\n`;
         }
         break;
       case "TTL":
@@ -925,8 +991,8 @@ const server = net.createServer((socket) => {
           response = "-ERROR: UNSUBSCRIBE requires at least one channel\r\n";
         } else {
           const channels = args[0];
-          response = "+OK\r\n";
-          db.unsubscribe(socket, channels); // Unsubscribe from channels
+         const result = db.unsubscribe(socket, channels); // Unsubscribe from channels
+          response = `${result}\r\n`;
         }
         break;
 
