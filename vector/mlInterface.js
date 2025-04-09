@@ -45,6 +45,11 @@ class MLInterface {
     const vector2 = vectorStore.getVector(key2);
     return vectorStore.subtract(vector1, vector2);
   }
+
+  exportVectors() {
+    const allVectors = vectorStore.allVectors();
+    return allVectors.filter(vector => Array.isArray(vector) && vector.every(Number.isFinite));
+  }
 }
 
 const ml = new MLInterface();
