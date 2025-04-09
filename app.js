@@ -160,12 +160,17 @@ const server = net.createServer((socket) => {
           const key = args[0];
           const path = args[1];
           // Correctly construct the JSON string using JSON.stringify()
-          const value = JSON.stringify(JSON.parse(args.slice(2).join(" ")));
+          const value = args.slice(2).join(" ");
 
-          console.log(value);
-
-          db.json.set(key, path, JSON.parse(value));
-          response = "+OK\r\n";
+          try {
+            // Validate if the value is a valid JSON
+            const parsedValue = JSON.parse(value);
+            db.json.set(key, path, parsedValue); // Set the parsed JSON value
+            response = "+OK\r\n";
+          } catch (error) {
+            // If JSON parsing fails, return an error response
+            response = "-ERROR: Invalid JSON value\r\n";
+          }
         }
         break;
 
@@ -948,7 +953,7 @@ const server = net.createServer((socket) => {
           response = "+OK\r\n";
           db.store.remove(keys);
         }
-      break;
+        break;
       case "CLEAR":
         db.clearStore(); // Clear the in-memory store
         db.clearAOF();
