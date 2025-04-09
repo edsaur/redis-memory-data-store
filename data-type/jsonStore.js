@@ -47,7 +47,7 @@ class JsonStore {
 
     if (this.deletePath(jsonData, path)) {
       this.store.set(key, JSON.stringify(jsonData)); // Only delete the value at the specified path
-      this.appendToAOF("db.json.del", { key });
+      this.appendToAOF("db.json.del", { key, path });
       return true;
     }
 
