@@ -27,7 +27,7 @@ class VectorStore {
     }
   
     allVectors() {
-      return Array.from(this.vectors.entries());
+      return Array.from(this.vectors.values());
     }
   
     clearStore() {
