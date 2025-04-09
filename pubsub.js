@@ -20,7 +20,6 @@ class PubSub {
       for (const socket of subscribers) {
         if (socket.writable) {
           socket.write(`\r\nMessage from ${channel}: ${message}\r\n`);
-          socket.write("Enter your command: ");
           count++;
         }
       }
@@ -29,7 +28,7 @@ class PubSub {
     }
   
     unsubscribe(socket, channel) {
-      if (!this.channels.has(channel)) return;
+      if (!this.channels.has(channel)) return 0;
       
       this.channels.get(channel).delete(socket);
       
