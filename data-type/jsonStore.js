@@ -9,8 +9,6 @@ class JsonStore {
   set(key, path, value) {
     let storedValue = this.store.get(key);
 
-    
-
     let jsonData =
       storedValue && typeof storedValue === "string"
         ? JSON.parse(storedValue)
@@ -37,7 +35,7 @@ class JsonStore {
   }
 
   del(key, path = "$") {
-    if (!this.store.has(key)) return false; // Return false instead of throwing an error
+    if (!this.store.has(key)) throw new Error("-ERR: Key does not exist"); // Return false instead of throwing an error
 
     if (path === "$") {
       this.store.remove(key); // Delete the entire object
@@ -57,11 +55,11 @@ class JsonStore {
   }
 
   arrAppend(key, path, value) {
-    if (!this.store.has(key)) return "-ERR: Key does not exist";
+    if (!this.store.has(key)) throw new Error("-ERR: Key does not exist");
     let jsonData = JSON.parse(this.store.get(key));
 
     let arr = this.getPath(jsonData, path);
-    if (!Array.isArray(arr)) return "-ERR: Path is not an array";
+    if (!Array.isArray(arr)) throw new Error("-ERR: Path is not an array");
     arr.push(value);
     this.store.set(key, JSON.stringify(jsonData));
     this.appendToAOF("db.json.arrAppend", { key, path, value });
