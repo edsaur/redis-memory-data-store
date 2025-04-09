@@ -65,7 +65,7 @@ const server = net.createServer((socket) => {
         if (args.length < 1) {
           response = "-ERROR: DEL requires at least one key\r\n";
         } else {
-          db.string.del(args[0]);
+          db.store.remove(args[0]);
           response = "+OK\r\n";
         }
         break;
