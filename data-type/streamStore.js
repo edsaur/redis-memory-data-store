@@ -41,7 +41,7 @@ class StreamStore {
     }
 
     if (fieldValues.length % 2 !== 0) {
-      throw new Error("Field-values must be in key-value pairs.");
+      throw new Error("-ERROR Field-values must be in key-value pairs.");
     }
 
     const formattedFields = [];
@@ -53,7 +53,7 @@ class StreamStore {
 
     const stream = this.store.get(key);
     if (!Array.isArray(stream))
-      throw new Error("Stream key corrupted, expected array.");
+      throw new Error("-ERROR Stream key corrupted, expected array.");
     stream.push(entry);
 
     // Only append to AOF if this is not from replay
@@ -98,7 +98,7 @@ class StreamStore {
 
   xgroupCreate(stream, group) {
     if (!this.store.has(stream)) {
-      throw new Error("Stream does not exist.");
+      throw new Error("-ERROR: Stream does not exist.");
     }
     if (!this.consumerGroups.has(stream)) {
       this.consumerGroups.set(stream, new Map());

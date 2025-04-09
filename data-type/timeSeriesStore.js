@@ -7,7 +7,7 @@ class TimeSeriesStore {
   // TS.CREATE - Create a new time series
   create(key) {
     if (this.store.has(key)) {
-      return `Time series ${key} already exists`;
+      throw new Error(`-ERROR: Time series ${key} already exists`);
     }
     this.store.set(key, []);
     this.appendToAOF(`db.ts.create`, {key});
@@ -16,7 +16,7 @@ class TimeSeriesStore {
   // TS.ADD - Add a data point to the time series
   add(key, timestamp, value) {
     if (!this.store.has(key)) {
-      return `Time series ${key} does not exist`;
+      throw new Error(`-ERROR: Time series ${key} does not exist`);
     }
     const timeSeries = this.store.get(key);
     timeSeries.push({ timestamp, value }); // Append new data point
@@ -28,7 +28,7 @@ class TimeSeriesStore {
   // TS.RANGE - Get data points in the given time range
   range(key, startTime, endTime) {
     if (!this.store.has(key)) {
-      return `Time series ${key} does not exist`;
+      throw new Error(`-ERROR: Time series ${key} does not exist`);
     }
     const timeSeries = this.store.get(key);
     return timeSeries.filter(
@@ -39,7 +39,7 @@ class TimeSeriesStore {
   // TS.GET - Get the most recent data point
   get(key) {
     if (!this.store.has(key)) {
-      return `Time series ${key} does not exist`;
+      throw new Error(`-ERROR: Time series ${key} does not exist`);
     }
     const timeSeries = this.store.get(key);
     return timeSeries.length > 0 ? timeSeries[timeSeries.length - 1] : null;
@@ -48,7 +48,7 @@ class TimeSeriesStore {
   // TS.DOWNSAMPLE - Downsample the time series to a specified interval
   downsample(key, interval) {
     if (!this.store.has(key)) {
-      return `Time series ${key} does not exist`;
+      throw new Error(`-ERROR: Time series ${key} does not exist`);
     }
     const timeSeries = this.store.get(key);
     const grouped = new Map();
@@ -78,6 +78,10 @@ class TimeSeriesStore {
 
   // Aggregation: Sum over a specific interval (e.g., sum of values in a range)
   aggregate(key, startTime, endTime, aggregationType = "sum") {
+    if (!this.store.has(key)) {
+      throw new Error(`-ERROR: Time series ${key} does not exist`);
+    }
+
     const dataInRange = this.range(key, startTime, endTime);
     let result;
 
