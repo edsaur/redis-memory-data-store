@@ -58,6 +58,13 @@ const server = net.createServer((socket) => {
           response = "-ERROR: GET requires exactly one key\r\n";
         } else {
           const value = db.string.get(args[0]);
+
+          // Check if key has TTL
+          const ttl = db.ttl.ttl(args[0]);
+          if (ttl === -2) {
+            response = value !== null ? `+${value}\r\n` : "$-1\r\n";
+            break;
+          }
           response = value !== null ? `+${value}\r\n` : "$-1\r\n"; // Return (nil) if key not found
         }
         break;
@@ -175,7 +182,9 @@ const server = net.createServer((socket) => {
               // Validate that the value is a valid JSON object if path is "$"
               const parsedValue = JSON.parse(value);
               if (typeof parsedValue !== "object" || parsedValue === null) {
-                throw new Error("-ERROR: Value must be a JSON object when path is '$'");
+                throw new Error(
+                  "-ERROR: Value must be a JSON object when path is '$'"
+                );
               }
               db.json.set(key, path, parsedValue); // Set the parsed JSON value
             } else {
@@ -1014,7 +1023,7 @@ const server = net.createServer((socket) => {
           response = "-ERROR: UNSUBSCRIBE requires at least one channel\r\n";
         } else {
           const channels = args[0];
-         const result = db.unsubscribe(socket, channels); // Unsubscribe from channels
+          const result = db.unsubscribe(socket, channels); // Unsubscribe from channels
           response = `${result}\r\n`;
         }
         break;
@@ -1037,22 +1046,23 @@ const server = net.createServer((socket) => {
           response = "+OK: Snapshot saved immediately\r\n";
         } else if (args.length === 1 && !isNaN(args[0])) {
           const intervalTime = Number(args[0]) * 1000; // Convert seconds to milliseconds
-      
+
           // Clear any existing interval
           if (saveInterval) {
             clearInterval(saveInterval);
             saveInterval = null;
           }
-      
+
           // Set a new interval
           saveInterval = setInterval(() => {
             db.saveSnapshot();
             console.log("Snapshot saved automatically");
           }, intervalTime);
-      
+
           response = `+OK: Snapshot will be saved every ${args[0]} seconds\r\n`;
         } else {
-          response = "-ERROR: Invalid SAVE command. Use SAVE or SAVE <seconds>\r\n";
+          response =
+            "-ERROR: Invalid SAVE command. Use SAVE or SAVE <seconds>\r\n";
         }
         break;
       case "DEL":
@@ -1076,8 +1086,9 @@ const server = net.createServer((socket) => {
         socket.write(response);
         db.clearStore();
         db.clearSnapshot();
-        process.exit(0);
-
+        socket.end();
+        socket.destroy();
+        break;
       default:
         response = "-ERROR: Unknown command\r\n";
     }
@@ -1085,10 +1096,22 @@ const server = net.createServer((socket) => {
     socket.write(response);
   });
 
-  socket.on("end", () => {
-    console.log("Client disconnected.");
+
+  socket.on("close", (hadError) => {
+    if (hadError) {
+      console.log("Client disconnected due to an error");
+    } else {
+      console.log("Client disconnected");
+    }
+  });
+
+  // Handle socket errors
+  socket.on("error", (err) => {
+    console.error("Socket error:", err.message);
   });
 });
+
+
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}...`);
