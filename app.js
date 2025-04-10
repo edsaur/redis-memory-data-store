@@ -61,6 +61,14 @@ const server = net.createServer((socket) => {
         }
         break;
 
+      case "EXISTS":
+        if (args.length !== 1) {
+          response = "-ERROR: EXISTS requires exactly one key\r\n";
+        } else {
+          const exists = db.string.exists(args[0]);
+          response = exists ? "+1\r\n" : "+0\r\n";
+        }
+
       case "DEL":
         if (args.length < 1) {
           response = "-ERROR: DEL requires at least one key\r\n";
@@ -159,17 +167,29 @@ const server = net.createServer((socket) => {
         } else {
           const key = args[0];
           const path = args[1];
-          // Correctly construct the JSON string using JSON.stringify()
           const value = args.slice(2).join(" ");
 
           try {
-            // Validate if the value is a valid JSON
-            const parsedValue = JSON.parse(value);
-            db.json.set(key, path, parsedValue); // Set the parsed JSON value
+            if (path === "$") {
+              // Validate that the value is a valid JSON object if path is "$"
+              const parsedValue = JSON.parse(value);
+              if (typeof parsedValue !== "object" || parsedValue === null) {
+                throw new Error("-ERROR: Value must be a JSON object when path is '$'");
+              }
+              db.json.set(key, path, parsedValue); // Set the parsed JSON value
+            } else {
+              // Allow strings or JSON values for other paths
+              let parsedValue;
+              try {
+                parsedValue = JSON.parse(value); // Try parsing as JSON
+              } catch {
+                parsedValue = value; // Use as a string if parsing fails
+              }
+              db.json.set(key, path, parsedValue);
+            }
             response = "+OK\r\n";
           } catch (error) {
-            // If JSON parsing fails, return an error response
-            response = "-ERROR: Invalid JSON value\r\n";
+            response = `${error.message}\r\n`;
           }
         }
         break;
@@ -186,11 +206,13 @@ const server = net.createServer((socket) => {
 
       case "JSON.DEL":
         if (args.length < 1) {
-          response = "-ERROR: JSON.DEL requires at least one key\r\n";
+          response = "-ERROR: JSON.DEL requires at least one key and path\r\n";
         } else {
+          const keys = args[0];
+          const path = args[1];
           try {
-            db.json.del(args[0]);
-            response = "+OK\r\n";
+            db.json.del(keys, path);
+            response = `+OK\r\n`;
           } catch (error) {
             response = `${error.message}\r\n`;
           }
