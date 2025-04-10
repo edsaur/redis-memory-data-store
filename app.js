@@ -12,6 +12,7 @@ const server = net.createServer((socket) => {
 
   let step = null;
   let clientId = null; // Store the client ID for transactions
+  let saveInterval = null; // Variable to store the interval ID
 
   socket.on("data", (data) => {
     const input = data.toString().trim();
@@ -1030,8 +1031,29 @@ const server = net.createServer((socket) => {
         break;
       // SAVE
       case "SAVE":
-        db.saveSnapshot(); // Save the current state to a snapshot file
-        response = "+OK\r\n";
+        if (args.length === 0) {
+          // Immediate save
+          db.saveSnapshot();
+          response = "+OK: Snapshot saved immediately\r\n";
+        } else if (args.length === 1 && !isNaN(args[0])) {
+          const intervalTime = Number(args[0]) * 1000; // Convert seconds to milliseconds
+      
+          // Clear any existing interval
+          if (saveInterval) {
+            clearInterval(saveInterval);
+            saveInterval = null;
+          }
+      
+          // Set a new interval
+          saveInterval = setInterval(() => {
+            db.saveSnapshot();
+            console.log("Snapshot saved automatically");
+          }, intervalTime);
+      
+          response = `+OK: Snapshot will be saved every ${args[0]} seconds\r\n`;
+        } else {
+          response = "-ERROR: Invalid SAVE command. Use SAVE or SAVE <seconds>\r\n";
+        }
         break;
       case "DEL":
         if (args.length < 1) {
