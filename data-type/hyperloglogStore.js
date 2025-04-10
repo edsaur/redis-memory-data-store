@@ -5,6 +5,7 @@ class HyperLogLogStore {
     this.store = store; // To persist data (e.g., Redis-like in-memory store)
     this.appendToAOF = appendToAOF; // To append commands to AOF file
     this.registersCount = registersCount; // Number of registers (buckets) for HyperLogLog
+    this.exactSets = new Map(); // Map to store exact elements
   }
 
   // Hash function using SHA-1 for better distribution
@@ -31,7 +32,7 @@ class HyperLogLogStore {
   }
 
 
-  // PFADD - Adds elements to the HyperLogLog
+  // PFADD - Adds elements to the HyperLogLog and exact set
   pfAdd(key, ...elements) {
     // Get the current HyperLogLog from the store
     let hyperLogLog = this.store.get(key);
@@ -51,6 +52,13 @@ class HyperLogLogStore {
     });
 
     this.store.set(key, hyperLogLog);
+
+    // Update exact set
+    if (!this.exactSets.has(key)) {
+      this.exactSets.set(key, new Set());
+    }
+    const exactSet = this.exactSets.get(key);
+    elements.forEach((element) => exactSet.add(element));
 
     this.appendToAOF("db.hll.pfAdd", { key, elements });
   }
@@ -102,6 +110,12 @@ class HyperLogLogStore {
 
     this.store.set(destKey, mergedHLL);
     this.appendToAOF("db.hll.pfMerge", { destKey, ...sourceKeys });
+  }
+
+  // Exact count of unique elements
+  exactCount(key) {
+    const exactSet = this.exactSets.get(key);
+    return exactSet ? exactSet.size : 0;
   }
 }
 
