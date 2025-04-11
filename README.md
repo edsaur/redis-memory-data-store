@@ -16,6 +16,8 @@ This Redis-like memory store replication has most of the basic Redis Functionali
  The tech stack I used:
  -
 - Javascript (Node.JS)
+- sockets (for server process)
+- netcat TCP (for command line interface replicating Redis-CLI)
 - TensorFlow (Machine Learning Library [for Vector functionalities])
 
 # How to use this?
