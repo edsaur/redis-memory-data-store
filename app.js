@@ -800,7 +800,6 @@ const server = net.createServer((socket) => {
               const type = args[i + 1];
               const offset = args[i + 2];
               const value = op === "GET" ? null : args[i + 3];
-              console.log(op + " " + value);
               if (!type || !offset || (op !== "GET" && value === undefined)) {
                 response = `-ERROR: Incomplete ${op} operation\r\n`;
                 break;
