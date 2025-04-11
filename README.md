@@ -28,7 +28,16 @@ Clone or download this [repository](https://github.com/edsaur/asg-redis-memory-d
 To run the server simply input `node app.js` to turn on the server. (If you don't have nodejs installed, install it [here](https://nodejs.org/en/download))
 
 ### Accessing the command line interface
-The CLI uses [netcat](https://en.wikipedia.org/wiki/Netcat). (If you don't have netcat yet, download netcat [here](https://nmap.org/ncat/))
+(Final Version)
+- 
+**For users who cannot install netcat or does not know how to use netcat, there is a custom CLI situated in the client's folder. To run simply input** `node client/customCLI.js`.
+
+
+~~(First version)~~
+- 
+~~The CLI uses [netcat](https://en.wikipedia.org/wiki/Netcat). (If you don't have netcat yet, download netcat [here](https://nmap.org/ncat/)).~~
+
+
 
 #### To access the CLI using netcat
 Run your CMD as admin, and input `ncat localhost 6379`. (NOTE: Make sure that the SERVER IS RUNNING FIRST!)
