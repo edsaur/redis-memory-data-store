@@ -37,9 +37,7 @@ To run the server simply input `node app.js` to turn on the server. (If you don'
 - 
 ~~The CLI uses [netcat](https://en.wikipedia.org/wiki/Netcat). (If you don't have netcat yet, download netcat [here](https://nmap.org/ncat/)).~~
 
-
-
-#### To access the CLI using netcat
-Run your CMD as admin, and input `ncat localhost 6379`. (NOTE: Make sure that the SERVER IS RUNNING FIRST!)
+~~#### To access the CLI using netcat
+Run your CMD as admin, and input `ncat localhost 6379`. (NOTE: Make sure that the SERVER IS RUNNING FIRST!)~~
 
 See the comprehensive list of the commands for the Redis-like CLI [here](https://github.com/edsaur/asg-redis-memory-data-store/blob/main/commands.md) 
