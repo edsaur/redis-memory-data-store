@@ -77,7 +77,7 @@ class StringStore {
       let value = Number(this.store.get(key));
       if (isNaN(value)) return "Value is not an integer";
       this.store.set(key, String(value - valToDecrement));
-      this.appendToAOF(`db.string.decrBy`, { key, value });
+      this.appendToAOF(`db.string.decBy`, { key, value });
     }
 
     return this.store.get(key);
