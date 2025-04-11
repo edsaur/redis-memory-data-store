@@ -16,6 +16,7 @@ This Redis-like memory store replication has most of the basic Redis Functionali
  The tech stack I used:
  -
 - Javascript (Node.JS)
+- TensorFlow (Machine Learning Library [for Vector functionalities])
 
 # How to use this?
 Clone or download this [repository](https://github.com/edsaur/asg-redis-memory-data-store) and install all the dependencies using "npm install" (if you're using NPM)
