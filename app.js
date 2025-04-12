@@ -1083,8 +1083,6 @@ const server = net.createServer((socket) => {
       case "QUIT":
         response = "+Goodbye!\r\n";
         socket.write(response);
-        db.clearStore();
-        db.clearSnapshot();
         socket.end();
         socket.destroy();
         break;
@@ -1102,6 +1100,9 @@ const server = net.createServer((socket) => {
     } else {
       console.log("Client disconnected");
     }
+
+    db.clearStore();
+    db.clearSnapshot();
   });
 
   // Handle socket errors
