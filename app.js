@@ -585,11 +585,13 @@ const server = net.createServer((socket) => {
           response = "-ERROR: XADD requires a key, field, and value\r\n";
         } else {
           const key = args[0];
-          const fieldValues = args.slice(1);
+          const id = args[1];
+          const fieldValues = args.slice(2);
+          
           try {
             // Attempt to add the entry to the stream
-            const id = db.stream.xadd(key, ...fieldValues);
-            response = `+${id}\r\n`;
+            const streamID = db.stream.xadd(key, id, ...fieldValues);
+            response = `+${streamID}\r\n`;
           } catch (error) {
             // Handle errors, such as invalid field-value pairs or corrupted stream
             response = `-ERROR: ${error.message}\r\n`;
