@@ -5,39 +5,28 @@ class StreamStore {
     this.consumerGroups = new Map(); // Stores consumer groups
   }
 
-  generateID(lastID) {
-    const timestamp = Date.now();
-    let sequence = 0;
-
-    if (lastID) {
-      const [lastTimestamp, lastSequence] = lastID.split("-").map(Number);
-      if (timestamp === lastTimestamp) {
-        sequence = lastSequence + 1;
-      }
-    }
-    return `${timestamp}-${sequence}`;
-  }
-
-  xadd(key, idOrField, ...maybeFields) {
+  xadd(key, id, ...maybeFields) {
     if (!this.store.has(key)) {
       this.store.set(key, []);
     }
 
     let entryID, fieldValues;
 
-    const isReplayID =
-      typeof idOrField === "string" && /^\d+-\d+$/.test(idOrField);
+    const isReplayID = typeof id === "string" && /^\d+-\d+$/.test(id);
 
-    if (isReplayID) {
-      // AOF replay mode
-      entryID = idOrField;
+    if (id === "*") {
+      // Generate a new ID using Date.now() and sequence number
+      const timestamp = Date.now();
+      const sequence = this.store.get(key).length === 0 ? 0 : this.store.get(key).length === 1 ? 1 : this.store.get(key).length + 1;
+      entryID = `${timestamp}-${sequence}`;
+      fieldValues = maybeFields;
+    } else if (isReplayID) {
+      // Use the provided ID directly (AOF replay mode)
+      entryID = id;
       fieldValues = maybeFields;
     } else {
-      // Normal CLI mode
-      fieldValues = [idOrField, ...maybeFields];
-      const timestamp = Date.now();
-      const sequence = this.store.get(key).length + 1;
-      entryID = `${timestamp}-${sequence}`;
+      // Invalid ID format
+      throw new Error("-ERROR Invalid ID format.");
     }
 
     if (fieldValues.length % 2 !== 0) {
@@ -52,12 +41,13 @@ class StreamStore {
     const entry = { id: entryID, data: Object.fromEntries(formattedFields) };
 
     const stream = this.store.get(key);
-    if (!Array.isArray(stream))
+    if (!Array.isArray(stream)) {
       throw new Error("-ERROR Stream key corrupted, expected array.");
+    }
     stream.push(entry);
 
     // Only append to AOF if this is not from replay
-    if (!isReplayID) {
+    if (id === "*") {
       this.appendToAOF("db.stream.xadd", {
         key,
         id: entryID,
@@ -88,7 +78,7 @@ class StreamStore {
     if (!this.store.has(stream)) return [];
 
     return this.store.get(stream).filter((entry) => {
-      return entry.id >= startID && entry.id <= endID;
+      return entry.id > startID && entry.id < endID;
     });
   }
 
