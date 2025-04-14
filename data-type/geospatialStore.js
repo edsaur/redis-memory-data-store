@@ -1,5 +1,3 @@
-import geohash from 'ngeohash';
-
 class GeoStore {
     constructor(store, appendToAOF) {
         this.store = store;
@@ -12,9 +10,7 @@ class GeoStore {
             this.store.set(key, new Map());
         }
 
-        const geocode = geohash.encode(lat, lon);
         this.store.get(key).set(name, { geocode, lat, lon });
-
         this.appendToAOF("db.geo.geoadd", { key, lat, lon, name });
 
         return 1; // Success
