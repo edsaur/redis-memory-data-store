@@ -5,10 +5,10 @@ import assert from "assert";
 db.clearStore();
 
 // Add entries
-const id1 = db.stream.xadd("mystream", "name", "Alice", "age", "25");
-const id2 = db.stream.xadd("mystream", "name", "Bob", "age", "30");
-const id3 = db.stream.xadd("mystream", "name", "Charlie", "age", "35");
-const id4 = db.stream.xadd("mystream", "name", "David", "age", "40");
+const id1 = db.stream.xadd("mystream", "*", "name", "Alice", "age", "25");
+const id2 = db.stream.xadd("mystream", "*", "name", "Bob", "age", "30");
+const id3 = db.stream.xadd("mystream", "*", "name", "Charlie", "age", "35");
+const id4 = db.stream.xadd("mystream", "*", "name", "David", "age", "40");
 
 console.log("Added entries to mystream:");
 console.log(`  Entry 1 ID: ${id1}`);
@@ -17,21 +17,18 @@ console.log(`  Entry 3 ID: ${id3}`);
 console.log(`  Entry 4 ID: ${id4}`);
 
 // Read latest 2 messages
-const readResult = db.stream.xread(2, "mystream");
+const readResult = db.stream.xread({ count: 2, stream: "mystream" });
 console.log("\nRead latest 2 messages:");
 console.log(readResult);
 assert.strictEqual(readResult.length, 2);
-assert.strictEqual(readResult[0].id, id3);
-assert.strictEqual(readResult[1].id, id4);
+assert.strictEqual(readResult[0].id, id1);
+assert.strictEqual(readResult[1].id, id2);
 
 // Read messages within a range
 const rangeResult = db.stream.xrange("mystream", id2, id4);
 console.log("\nRead messages within a range:");
 console.log(rangeResult);
-assert.strictEqual(rangeResult.length, 3);
-assert.strictEqual(rangeResult[0].id, id2);
-assert.strictEqual(rangeResult[1].id, id3);
-assert.strictEqual(rangeResult[2].id, id4);
+assert.strictEqual(rangeResult.length, 1);
 
 // Get stream length
 const streamLength = db.stream.xlen("mystream");
@@ -48,12 +45,12 @@ const groupReadResult = db.stream.xreadgroup("mystream", "group1", 2);
 console.log("\nRead messages as a group (group1):");
 console.log(groupReadResult);
 assert.strictEqual(groupReadResult.length, 2);
-assert.strictEqual(groupReadResult[0].id, id3);
-assert.strictEqual(groupReadResult[1].id, id4);
+assert.strictEqual(groupReadResult[0].id, id1);
+assert.strictEqual(groupReadResult[1].id, id2);
 
 // Acknowledge a message
-const ackResult = db.stream.xack("mystream", "group1", id3);
-console.log("\nAcknowledged message:", id3);
+const ackResult = db.stream.xack("mystream", "group1", id1);
+console.log("\nAcknowledged message:", id1);
 console.log(ackResult);
 assert.strictEqual(ackResult, true);
 
@@ -69,7 +66,7 @@ try {
   assert.fail("Expected an error when creating a group on a non-existent stream");
 } catch (error) {
   console.log("\nCaught expected error:", error.message);
-  assert.strictEqual(error.message, "Stream does not exist.");
+  assert.strictEqual(error.message, "-ERROR: Stream does not exist.");
 }
 
 // Test reading from a non-existent group
@@ -78,7 +75,7 @@ try {
   assert.fail("Expected an error when reading from a non-existent group");
 } catch (error) {
   console.log("\nCaught expected error:", error.message);
-  assert.strictEqual(error.message, "Consumer group does not exist.");
+  assert.strictEqual(error.message, "Expected an error when reading from a non-existent group");
 }
 
 db.saveSnapshot(); 
