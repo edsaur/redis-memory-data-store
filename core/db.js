@@ -18,7 +18,7 @@ import PubSub from "./pubsub.js";
 import { aofCommandHandlers } from "./handlers/aofCommandHandlers.js";
 
 class RedisLikeDB {
-  constructor(aofFile = "data.aof", snapshotFile = "data.snapshot.json") {
+  constructor(aofFile = "./datas/data.aof", snapshotFile = "./datas/data.snapshot.json") {
     this.store = new InMemoryStore();
     this.ttl = new TTLStore(this.store, this.appendToAOF.bind(this));
     this.transaction = new TransactionStore(
