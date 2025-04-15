@@ -1,6 +1,5 @@
 import net from "net";
-import db from "../db.js"; // Your database module
-
+import db from "../../core/db";
 const PORT = 6379; // Redis default port
 
 const displayMenu = () => {
