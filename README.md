@@ -17,7 +17,6 @@ This Redis-like memory store replication has most of the basic Redis Functionali
  -
 - Javascript (Node.JS)
 - sockets (for server process)
-- netcat TCP (for command line interface replicating Redis-CLI)
 - TensorFlow (Machine Learning Library [for Vector functionalities])
 
 # How to use this?
@@ -25,21 +24,15 @@ Clone or download this [repository](https://github.com/edsaur/asg-redis-memory-d
 
 ## Running the Server and using the Redis-like CLI
 ### Running the server
-To run the server simply input `node app.js` to turn on the server. (If you don't have nodejs installed, install it [here](https://nodejs.org/en/download))
+To run the server simply input `node app.js` or `npm run redis-server` in the terminal to turn on the server. (If you don't have nodejs installed, install it [here](https://nodejs.org/en/download))
 
 ### Accessing the command line interface
-(Final Version)
 - 
-**For users who cannot install netcat or does not know how to use netcat, there is a custom CLI situated in the client's folder. To run simply input** `node client/customCLI.js`.
-
-
-~~(First version)~~
-- 
-~~The CLI uses [netcat](https://en.wikipedia.org/wiki/Netcat). (If you don't have netcat yet, download netcat [here](https://nmap.org/ncat/)).~~
-
-~~#### To access the CLI using netcat
-Run your CMD as admin, and input `ncat localhost 6379`. (NOTE: Make sure that the SERVER IS RUNNING FIRST!)~~
-
+**There is a custom CLI situated in the client's folder. To run the redis-like CLI simply input:** `node client/customCLI.js` or run `npm run redis-cli` to your terminal.
 
 # LIST OF COMMANDS
  **See the comprehensive list of the commands for the Redis-like CLI [here](https://github.com/edsaur/asg-redis-memory-data-store/blob/main/commands.md)**
+
+
+## If you wanted to check the Legacy Folder Structure
+#### [Check this branch:](https://github.com/edsaur/asg-redis-memory-data-store/tree/legacy-clone)
