@@ -1,5 +1,5 @@
 import net from "net";
-import db from "./db.js"; // Your database module
+import db from "./core/db.js"; // Your database module
 
 const PORT = 6379; // Redis default port
 
@@ -7,7 +7,7 @@ const server = net.createServer((socket) => {
   console.log("Client connected!");
 
   socket.write(
-    "Welcome to Redis-like Store! Type commands like SET key value, GET key, etc.\n"
+    "Client connected\n"
   );
 
   let step = null;
