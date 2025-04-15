@@ -3,7 +3,7 @@
 Hello this is my assessment for **ASG Platform** where I replicated Redis functionalities into my own ways. 
 
 This Redis-like memory store replication has most of the basic Redis Functionalities as follows:
-- **SET, GET, DEL, HAS functionality**
+- **SET, GET, DEL, EXISTS functionality**
 - **Support functions for major Redis datatypes (Strings, JSON, Lists, Sets, Hashes, Sorted Sets, Streams, Geospatial, Bitmaps, Bitfields, Probabilistic Data Structure, and Time Series)**
 - **Key Expirations**
 - **Server to Client interaction**
