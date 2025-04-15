@@ -1,4 +1,4 @@
-import db from "../db.js";
+import db from "../core/db.js";
 import assert from "assert";
 
 // Clear any existing data
