@@ -22,12 +22,14 @@ This Redis-like memory store replication has most of the basic Redis Functionali
 # How to use this?
 Clone or download this [repository](https://github.com/edsaur/asg-redis-memory-data-store) and install all the dependencies using "npm install" (if you're using NPM)
 
+## Running the script-tests
+To run the script tests input to the terminal `node scriptTests/data-type-want-to-test`
+
 ## Running the Server and using the Redis-like CLI
 ### Running the server
 To run the server simply input `node app.js` or `npm run redis-server` in the terminal to turn on the server. (If you don't have nodejs installed, install it [here](https://nodejs.org/en/download))
 
 ### Accessing the command line interface
-- 
 **There is a custom CLI situated in the client's folder. To run the redis-like CLI simply input:** `node client/customCLI.js` or run `npm run redis-cli` to your terminal.
 
 # LIST OF COMMANDS
