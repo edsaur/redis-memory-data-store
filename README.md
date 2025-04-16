@@ -23,7 +23,11 @@ This Redis-like memory store replication has most of the basic Redis Functionali
 Clone or download this [repository](https://github.com/edsaur/asg-redis-memory-data-store) and install all the dependencies using "npm install" (if you're using NPM)
 
 ## Running the script-tests
-To run the script tests input to the terminal `node scriptTests/data-type-want-to-test`
+### Running the tests for the comprehensive data-types
+To run the script tests input to the terminal `node scriptTests/data-type-want-to-test` 
+
+### Running the tests for Vector Database functionalities
+Or if you want to try the vector, simply input `node core/vector/testMLIntegration.js` (to test the integration to ML or TensorFlow) or `node core/vector/mlInterfaceTest.js` (to test the vector store).
 
 ## Running the Server and using the Redis-like CLI
 ### Running the server
