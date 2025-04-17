@@ -5,7 +5,7 @@ STRINGS (and other data-types that are not complex)
 - **SET *key* *value*** - This is to SET to the store the key-value pairs
 - **GET *key*** - Accepts a key and gets the value from that key.
 - **DEL key** - Accepts a key and removes the key-value pair from the store
-- **HAS *key*** - Accepts a key and checks if a key exists.
+- **EXISTS *key*** - Accepts a key and checks if a key exists.
 
 JSON
 - 
