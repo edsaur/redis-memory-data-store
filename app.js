@@ -36,7 +36,7 @@ const server = net.createServer((socket) => {
       return; // Don't process further in the main switch
     }
 
-    const parts = input.split(" ");
+    const parts = input.match(/(?:[^\s"']+|"(?:\\.|[^"])*"|'(?:\\.|[^'])*')+/g).map((arg) => arg.replace(/^['"]|['"]$/g, ""));
     const command = parts[0].toUpperCase(); // Extract command
     const args = parts.slice(1).map((arg) => arg.replace(/^"(.*)"$/, "$1"));
 
@@ -411,6 +411,8 @@ const server = net.createServer((socket) => {
           const key = args[0];
           const field = args[1];
           const value = args[2];
+
+          console.log(value);
           try {
             db.hash.hset(key, field, value);
             response = "+OK\r\n";
@@ -443,10 +445,11 @@ const server = net.createServer((socket) => {
           const key = args[0];
           const pairs = args.slice(1);
           const obj = {};
-
           for (let i = 0; i < pairs.length; i += 2) {
             const field = pairs[i]; // Use the field as-is
             let value = pairs[i + 1];
+
+            console.log(field, "->", value);
 
             // Try to parse the value as JSON (to handle arrays/objects)
             try {
