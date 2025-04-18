@@ -73,7 +73,7 @@ const server = net.createServer((socket) => {
         if (args.length !== 1) {
           response = "-ERROR: EXISTS requires exactly one key\r\n";
         } else {
-          const exists = db.string.exists(args[0]);
+          const exists = db.store.has(args[0]);
           response = exists ? "+1\r\n" : "+0\r\n";
         }
 
@@ -298,6 +298,7 @@ const server = net.createServer((socket) => {
           const values = db.list.lrange(key, start, end);
           response = `+${JSON.stringify(values)}\r\n`;
         }
+        break;
 
       case "LINDEX":
         if (args.length !== 2 || isNaN(args[1])) {
@@ -444,13 +445,21 @@ const server = net.createServer((socket) => {
           const obj = {};
 
           for (let i = 0; i < pairs.length; i += 2) {
-            const field = pairs[i].replace(/:$/, ""); // Remove trailing colon
-            const value = pairs[i + 1].replace(/,$/, ""); // Remove trailing comma
+            const field = pairs[i]; // Use the field as-is
+            let value = pairs[i + 1];
+
+            // Try to parse the value as JSON (to handle arrays/objects)
+            try {
+              value = JSON.parse(value);
+            } catch {
+              // If parsing fails, keep the value as a string
+            }
+
             obj[field] = value;
           }
 
           try {
-            db.hash.hmset(key, obj);
+            db.hash.hmset(key, obj); // Call the `hmset` method in `hashStore.js`
             response = "+OK\r\n";
           } catch (error) {
             response = `${error.message}\r\n`;
@@ -767,8 +776,8 @@ const server = net.createServer((socket) => {
           const operation = args[0];
           const destKey = args[1];
           const sourceKeys = args.slice(2);
-          db.bitmap.bitOp(operation, destKey, ...sourceKeys);
-          response = "+OK\r\n";
+         const value = db.bitmap.bitOp(operation, destKey, ...sourceKeys);
+          response = `+OK ${value}\r\n`;
         }
         break;
 
