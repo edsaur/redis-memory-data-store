@@ -9,8 +9,7 @@ class GeoStore {
         if (!this.store.has(key)) {
             this.store.set(key, new Map());
         }
-
-        this.store.get(key).set(name, { geocode, lat, lon });
+        this.store.get(key).set(name, { lat, lon });
         this.appendToAOF("db.geo.geoadd", { key, lat, lon, name });
 
         return 1; // Success
