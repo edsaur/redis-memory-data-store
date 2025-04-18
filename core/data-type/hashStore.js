@@ -29,12 +29,21 @@ class HashStore {
 
   // HMSET: Set multiple field-value pairs in a hash
   hmset(key, obj) {
-    if (typeof key !== "string" || typeof obj !== "object") {
+    if (typeof key !== "string" || typeof obj !== "object" || Array.isArray(obj)) {
       return "-ERROR: Key must be a string, and value must be an object.";
     }
     if (!this.store.has(key)) this.store.set(key, {});
     const hash = this.store.get(key);
-    Object.assign(hash, obj);
+
+    // Serialize values if they are arrays or objects
+    for (const [field, value] of Object.entries(obj)) {
+      if (typeof value === "object") {
+        hash[field] = JSON.stringify(value); // Serialize arrays/objects to JSON
+      } else {
+        hash[field] = value; // Store primitive values as-is
+      }
+    }
+
     this.appendToAOF("db.hash.hmset", { key, obj });
     return "OK";
   }
@@ -44,7 +53,21 @@ class HashStore {
     if (typeof key !== "string") {
       return "-ERROR Key must be a string.";
     }
-    return this.store.has(key) ? this.store.get(key) : {};
+    if (!this.store.has(key)) return {};
+
+    const hash = this.store.get(key);
+    const result = {};
+
+    // Deserialize JSON strings back into objects/arrays
+    for (const [field, value] of Object.entries(hash)) {
+      try {
+        result[field] = JSON.parse(value); // Attempt to parse JSON strings
+      } catch {
+        result[field] = value; // Keep primitive values as-is
+      }
+    }
+
+    return result;
   }
 
   // Hdel: Delete one or more fields in a hash
